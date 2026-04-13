@@ -18,15 +18,15 @@ References: DATEV 40% faster month-end close; PLM 23% inventory reduction; Sieme
 
 Respond ONLY with valid JSON:
 {
-  "greeting": "One punchy direct sentence for ${firstName}. Specific to their situation. Max 15 words.",
+  "greeting": "One punchy direct sentence for ${firstName}. Specific to their situation. Include a subtle urgency signal — a competitor moving, a window closing, a timing reason. Max 15 words.",
   "situation": "3-4 sentences. Specific tension this role faces. Have an opinion. Human, no buzzwords.",
   "approaches": [
-    { "title": "Action verb + what, 5-7 words, future tense", "description": "2 sentences for ${company}, future tense.", "outcome": "Specific measurable result." }
+    { "title": "Action verb + what, 5-7 words, future tense", "description": "2 sentences for ${company}, future tense. When relevant, mention that valantic brings dedicated AI specialists — not all of valantic, but specific AI experts.", "outcome": "Specific measurable result." }
   ],
   "references": [
     { "number": "metric", "description": "What we achieved. Past tense. 1-2 sentences.", "client": "Client or industry" }
   ],
-  "next_step": "Concrete proposal. What we'd cover, why now. 2 sentences.",
+  "next_step": "Concrete proposal. Always mention that valantic brings dedicated AI specialists/experts — not implying the whole company, but a specific team of AI experts. Anchor with a reference ROI or result from a similar company (e.g. 'like the €4M potential we identified for a similar industrial client in one workshop'). Include why now. 2-3 sentences.",
   "cta_label": "4-6 words. Specific."
 }
 2-3 approaches. 2-3 references. First reference most impactful.`;
