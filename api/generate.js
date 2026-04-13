@@ -50,12 +50,17 @@ function buildHTML(data, input, contact) {
       ${a.outcome?`<div style="font-size:12px;font-weight:600;color:#193773;border-top:1px solid #f0eeee;padding-top:9px;">→ ${a.outcome}</div>`:''}
     </div>`).join('');
 
-  const refCards = refs.map((r) => `
-    <div class="nfc" onclick="openRef(this,'${r.client.replace(/'/g,"\'")}','${r.number}',\`${r.description.replace(/`/g,'\`')}\`)" style="flex:0 0 200px;background:#100c2a;border-radius:14px;padding:22px;cursor:pointer;transition:transform .2s,border-color .2s;position:relative;overflow:hidden;border:2px solid transparent;">
-      <div style="position:absolute;top:-16px;right:-16px;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(255,75,75,.2) 0%,transparent 70%);pointer-events:none;"></div>
-      <div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:12px;">${r.client}</div>
-      <div style="font-size:42px;font-weight:700;line-height:1;color:#ff4b4b;margin-bottom:8px;">${r.number}</div>
-      <div style="font-size:12px;color:rgba(255,255,255,.5);line-height:1.4;">${r.description.split(' ').slice(0,6).join(' ')}…</div>
+  const refSlides = refs.map((r) => `
+    <div style="flex:0 0 100%;background:#100c2a;border-radius:18px;padding:40px 48px;position:relative;overflow:hidden;min-height:200px;display:flex;align-items:center;gap:48px;">
+      <div style="flex-shrink:0;">
+        <div style="font-size:clamp(56px,8vw,88px);font-weight:700;line-height:1;color:#ff4b4b;">${r.number}</div>
+      </div>
+      <div style="width:1px;height:72px;background:rgba(255,255,255,.1);flex-shrink:0;"></div>
+      <div style="flex:1;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:12px;">${r.client}</div>
+        <div style="font-size:16px;color:rgba(255,255,255,.8);line-height:1.65;">${r.description}</div>
+      </div>
+      <div style="position:absolute;right:-20px;top:50%;transform:translateY(-50%);font-size:180px;font-weight:700;color:rgba(255,255,255,.03);line-height:1;pointer-events:none;user-select:none;">${r.number}</div>
     </div>`).join('');
 
   const avatar = contact.photo
@@ -122,16 +127,16 @@ footer{background:#100c2a;padding:28px 56px;display:flex;justify-content:space-b
   <div style="margin-bottom:40px;"><div class="lbl">Your situation</div><div class="wcard"><p style="font-size:16px;line-height:1.8;color:#2a2a2a;">${data.situation||''}</p></div></div>
   <div style="margin-bottom:40px;"><div class="lbl">What we'd do for ${input.company}</div><div class="card-grid">${approachCards}</div></div>
   ${refs.length?`<div style="margin-bottom:40px;">
-    <div class="lbl">Proven results</div>
-    <div id="nfx-strip" style="display:flex;gap:14px;overflow-x:auto;padding-bottom:4px;">${refCards}</div>
-    <div id="nfd">
-      <div style="position:absolute;right:-20px;top:-20px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(255,75,75,.15) 0%,transparent 70%);pointer-events:none;"></div>
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;">
-        <div id="nfd-c" style="font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.35);"></div>
-        <button onclick="closeRef()" style="background:none;border:none;color:rgba(255,255,255,.3);cursor:pointer;font-size:20px;line-height:1;">×</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div class="lbl" style="margin-bottom:0;">Proven results</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span id="rc" style="font-size:12px;font-weight:600;color:#aaa;">1 / ${refs.length}</span>
+        <button onclick="pRef()" style="width:36px;height:36px;border-radius:50%;border:1.5px solid #ddd;background:white;cursor:pointer;font-size:16px;color:#555;">‹</button>
+        <button onclick="nRef()" style="width:36px;height:36px;border-radius:50%;border:1.5px solid #ddd;background:white;cursor:pointer;font-size:16px;color:#555;">›</button>
       </div>
-      <div id="nfd-n" style="font-size:60px;font-weight:700;line-height:1;color:#ff4b4b;margin-bottom:12px;"></div>
-      <div id="nfd-d" style="font-size:15px;color:rgba(255,255,255,.72);line-height:1.65;"></div>
+    </div>
+    <div style="position:relative;overflow:hidden;border-radius:18px;">
+      <div id="rt" style="display:flex;transition:transform .35s cubic-bezier(.4,0,.2,1);">${refSlides}</div>
     </div>
   </div>`:''}
   <div style="margin-bottom:40px;"><div class="lbl">Our proposal for ${input.company}</div>
@@ -155,21 +160,9 @@ footer{background:#100c2a;padding:28px 56px;display:flex;justify-content:space-b
 <footer>${LOGO_W}<span style="font-size:12px;color:rgba(255,255,255,.25);">valantic.ai</span></footer>
 <div class="mob"><a href="mailto:${contact.email}" class="cta" style="width:100%;justify-content:center;"><i class="ph ph-calendar-check" style="font-size:15px;"></i> ${data.cta_label||'Book 30 minutes'}</a></div>
 <script>
-function openRef(el,client,number,desc){
-  document.querySelectorAll('.nfc').forEach(c=>c.style.borderColor='transparent');
-  el.style.borderColor='#ff4b4b';
-  document.getElementById('nfd-c').textContent=client;
-  document.getElementById('nfd-d').textContent=desc;
-  const ne=document.getElementById('nfd-n');
-  const num=parseFloat(number.replace(/[^0-9.]/g,''));
-  const suf=number.replace(/[0-9.]/g,'');
-  document.getElementById('nfd').style.display='block';
-  if(!isNaN(num)){const dur=700,s=performance.now();
-    function t(now){const p=Math.min((now-s)/dur,1),e=1-Math.pow(1-p,3);
-      ne.textContent=(Number.isInteger(num)?Math.round(num*e):Math.round(num*e*10)/10)+suf;if(p<1)requestAnimationFrame(t);}
-    requestAnimationFrame(t);}else{ne.textContent=number;}
-}
-function closeRef(){document.getElementById('nfd').style.display='none';document.querySelectorAll('.nfc').forEach(c=>c.style.borderColor='transparent');}
+let ri=0,rl=${JSON.stringify(refs)}.length;
+function go(i){ri=(i+rl)%rl;const t=document.getElementById('rt');const c=document.getElementById('rc');if(t)t.style.transform='translateX(-'+(ri*100)+'%)';if(c)c.textContent=(ri+1)+' / '+rl;}
+function nRef(){go(ri+1);}function pRef(){go(ri-1);}
 </script>
 </body>
 </html>`;
