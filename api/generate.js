@@ -115,7 +115,7 @@ footer{background:rgba(255,255,255,.03);border-top:1px solid rgba(255,255,255,.0
   <div class="hc">
     <div class="fi" style="font-size:12px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:14px;">${input.role?input.role+' · ':''}${input.company}</div>
     <div class="fi2" style="font-size:clamp(40px,6vw,68px);font-weight:700;line-height:1.05;background:linear-gradient(135deg,#ff4b4b,#ff744f);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:14px;">${firstName},</div>
-    <div class="fi3" style="font-size:clamp(15px,2vw,20px);font-weight:400;color:rgba(255,255,255,.72);line-height:1.55;max-width:520px;margin-bottom:24px;">${data.greeting||''}</div>
+    <div class="fi3" style="font-size:clamp(15px,2vw,20px);font-weight:400;color:rgba(255,255,255,.72);line-height:1.55;max-width:520px;margin-bottom:24px;">${(data.greeting||'').replace(new RegExp('^'+firstName+'[,.]?\\s*','i'),'')}</div>
     <a href="mailto:${contact.email}?subject=Re: valantic for ${input.company}" class="fi3 cta" style="margin-top:0;">
       <i class="ph ph-calendar-check" style="font-size:16px;"></i> ${data.cta_label||'Book 30 minutes'}
     </a>
