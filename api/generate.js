@@ -51,7 +51,7 @@ function buildHTML(data, input, contact) {
   const refSpotlight = refs.length ? `
     <div style="position:relative;">
       ${refs.map((r,i)=>`
-      <div class="rsp" style="display:${i===0?'block':'none'};background:#100c2a;border-radius:20px;padding:48px 52px;position:relative;overflow:hidden;">
+      <div class="rsp" style="display:${i===0?'block':'none'};background:#100c2a;border-radius:20px;padding:52px 56px;min-height:280px;position:relative;overflow:hidden;">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:28px;">
           <img src="https://logo.clearbit.com/${(r.client||'').toLowerCase().replace(/[^a-z0-9]/g,'')}.com" style="height:18px;width:auto;opacity:.4;filter:brightness(10);" onerror="this.style.display='none'" alt="">
           <span style="font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.35);">${r.client}</span>
@@ -123,7 +123,7 @@ footer{background:#100c2a;padding:28px 56px;display:flex;justify-content:space-b
       <span style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.35);">${input.company}</span>
     </div>
     <div style="font-size:clamp(28px,4vw,52px);font-weight:700;line-height:1.18;max-width:840px;opacity:0;animation:fadeUp .6s .3s ease forwards;">
-      <span id="tw" style="color:white;"></span><span id="twn" style="display:none;background:linear-gradient(135deg,#ff4b4b,#ff744f);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">${firstName},</span><span id="twr" style="color:white;display:none;"> ${greetingClean}</span><span id="twc" style="color:#ff4b4b;animation:blink 1s step-end infinite;">|</span>
+      <span id="tw" style="color:white;"></span><span id="twn" style="display:none;background:linear-gradient(135deg,#ff4b4b,#ff744f);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">${firstName},</span><span id="twr" style="color:white;display:none;"> ${greetingClean}</span><span id="twc" style="color:#ff4b4b;animation:blink 1s step-end infinite;display:none;">|</span>
     </div>
   </div>
 </section>
@@ -132,7 +132,7 @@ footer{background:#100c2a;padding:28px 56px;display:flex;justify-content:space-b
   <div class="sr" style="margin-bottom:44px;"><div class="lbl">Your situation</div><div class="wcard"><p style="font-size:16px;line-height:1.85;color:#2a2a2a;">${data.situation||''}</p></div></div>
   <div class="sr" style="margin-bottom:44px;"><div class="lbl">What we'd do for ${input.company}</div><div class="card-grid">${approachCards}</div></div>
   ${refs.length?`<div class="sr" style="margin-bottom:44px;"><div class="lbl">Proven results</div>${refSpotlight}</div>`:''}
-  <div class="sr" style="margin-bottom:32px;"><div class="lbl">Our proposal for ${input.company}</div>
+  <div class="sr" style="margin-bottom:32px;"><div class="lbl">Here's what I'd suggest</div>
     <div class="wcard">
       <p style="font-size:15px;color:#444;line-height:1.75;margin-bottom:22px;">${data.next_step||''}</p>
       <a href="mailto:${contact.email}?subject=Re: valantic for ${input.company}&body=Hi ${contact.name.split(' ')[0]}," class="cta"><i class="ph ph-calendar-check" style="font-size:15px;"></i> ${data.cta_label||'Book 30 minutes'}</a>
@@ -153,23 +153,26 @@ footer{background:#100c2a;padding:28px 56px;display:flex;justify-content:space-b
 <footer>${LOGO_W}<span style="font-size:12px;color:rgba(255,255,255,.25);">valantic.ai</span></footer>
 <div class="mob"><a href="mailto:${contact.email}" class="cta" style="width:100%;justify-content:center;"><i class="ph ph-calendar-check" style="font-size:15px;"></i> ${data.cta_label||'Book 30 minutes'}</a></div>
 <script>
-// Typewriter on full headline
+// Typewriter on full headline — delay start to avoid flash
 const full='${(firstName+', '+greetingClean).replace(/'/g,"\\'")}',nl=${nameLen};
 let ni=0;const tw=document.getElementById('tw'),twn=document.getElementById('twn'),twr=document.getElementById('twr'),twc=document.getElementById('twc');
-const ti=setInterval(()=>{
-  if(ni<=full.length){
-    if(ni<=nl){if(tw)tw.textContent=full.slice(0,ni);}
-    else{if(tw)tw.style.display='none';if(twn)twn.style.display='inline';if(twr){twr.style.display='inline';twr.textContent=' '+full.slice(nl+1,ni);}}
-    ni++;
-  }else{clearInterval(ti);if(twc)twc.style.display='none';}
-},45);
+setTimeout(()=>{
+  if(twc)twc.style.display='inline';
+  const ti=setInterval(()=>{
+    if(ni<=full.length){
+      if(ni<=nl){if(tw)tw.textContent=full.slice(0,ni);}
+      else{if(tw)tw.style.display='none';if(twn)twn.style.display='inline';if(twr){twr.style.display='inline';twr.textContent=' '+full.slice(nl+1,ni);}}
+      ni++;
+    }else{clearInterval(ti);if(twc)twc.style.display='none';}
+  },45);
+},400);
 // Spotlight auto-advance
 const rl=${JSON.stringify(refs.length)};let ri=0,rt;
-function sg(i){ri=i;clearInterval(rt);if(rl>1)rt=setInterval(()=>sg((ri+1)%rl),4000);
+function sg(i){ri=i;clearInterval(rt);if(rl>1)rt=setInterval(()=>sg((ri+1)%rl),8000);
   document.querySelectorAll('.rsp').forEach((e,j)=>e.style.display=j===i?'block':'none');
   for(let j=0;j<rl;j++){const b=document.getElementById('rb-'+j);if(b){b.style.width=j===i?'24px':'8px';b.style.background=j===i?'#ff4b4b':'#ccc';}}
   const c=document.getElementById('rsc');if(c)c.textContent=(i+1)+' / '+rl;}
-if(rl>1)rt=setInterval(()=>sg((ri+1)%rl),4000);
+if(rl>1)rt=setInterval(()=>sg((ri+1)%rl),8000);
 // Scroll reveal
 const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('v');obs.unobserve(e.target);}});},{threshold:.08});
 document.querySelectorAll('.sr').forEach(el=>obs.observe(el));
