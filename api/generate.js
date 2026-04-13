@@ -36,30 +36,29 @@ function buildHTML(data, input, contact) {
   const firstName = input.name.split(' ')[0];
   const domain = input.company.toLowerCase().replace(/\s+/g,'').replace(/[^a-z0-9]/g,'') + '.com';
   const refs = data.references || [];
-
-  const greetingClean = (data.greeting||'').replace(new RegExp('^'+firstName+'[,.]?\s*','i'),'');
-  const words = greetingClean.split(' ');
-  const lastWord = words.pop();
-  const heroMain = words.join(' ');
+  const greetingClean = (data.greeting||'').replace(new RegExp('^'+firstName+'[,.]?\\s*','i'),'');
 
   const approachCards = (data.approaches||[]).map((a,i) => `
-    <div style="background:white;border-radius:14px;padding:24px;box-shadow:0 1px 6px rgba(0,0,0,.06);">
-      <div style="font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#ff4b4b;margin-bottom:10px;">0${i+1}</div>
-      <div style="font-size:15px;font-weight:700;color:#100c2a;margin-bottom:7px;line-height:1.3;">${a.title}</div>
-      <div style="font-size:14px;color:#555;line-height:1.65;margin-bottom:9px;">${a.description}</div>
-      ${a.outcome?`<div style="font-size:12px;font-weight:600;color:#193773;border-top:1px solid #f0eeee;padding-top:9px;">→ ${a.outcome}</div>`:''}
+    <div style="background:white;border-radius:16px;padding:28px;box-shadow:0 1px 6px rgba(0,0,0,.06);transition:transform .2s,box-shadow .2s;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,.1)'" onmouseout="this.style.transform='';this.style.boxShadow='0 1px 6px rgba(0,0,0,.06)'">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#ff4b4b;margin-bottom:12px;">0${i+1}</div>
+      <div style="font-size:15px;font-weight:700;color:#100c2a;margin-bottom:8px;line-height:1.3;">${a.title}</div>
+      <div style="font-size:14px;color:#555;line-height:1.65;margin-bottom:10px;">${a.description}</div>
+      ${a.outcome?`<div style="font-size:12px;font-weight:600;color:#193773;border-top:1px solid #f0eeee;padding-top:10px;">→ ${a.outcome}</div>`:''}
     </div>`).join('');
 
-  const refSlides = refs.map((r) => `
-    <div style="flex:0 0 calc(50% - 7px);background:#100c2a;border-radius:18px;padding:32px;position:relative;overflow:hidden;min-height:200px;">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
-        <img src="https://logo.clearbit.com/${(r.client||'').toLowerCase().replace(/[^a-z0-9]/g,'')}.com" style="height:16px;width:auto;opacity:.45;filter:brightness(10);" onerror="this.style.display='none'" alt="">
-        <div style="font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.35);">${r.client}</div>
+  const makeCard = r => `
+    <div style="flex:0 0 340px;background:#100c2a;border-radius:18px;padding:32px;position:relative;overflow:hidden;margin-right:16px;transition:transform .2s;" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform=''">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:18px;">
+        <img src="https://logo.clearbit.com/${(r.client||'').toLowerCase().replace(/[^a-z0-9]/g,'')}.com" style="height:16px;width:auto;opacity:.4;filter:brightness(10);" onerror="this.style.display='none'" alt="">
+        <span style="font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.3);">${r.client}</span>
       </div>
-      <div style="font-size:clamp(44px,6vw,72px);font-weight:700;line-height:1;color:#ff4b4b;margin-bottom:12px;">${r.number}</div>
-      <div style="font-size:14px;color:rgba(255,255,255,.7);line-height:1.6;">${r.description}</div>
-      <div style="position:absolute;right:-10px;bottom:-10px;font-size:130px;font-weight:700;color:rgba(255,255,255,.03);line-height:1;pointer-events:none;user-select:none;">${r.number}</div>
-    </div>`).join('');
+      <div style="font-size:clamp(52px,7vw,80px);font-weight:700;line-height:1;color:#ff4b4b;margin-bottom:14px;">${r.number}</div>
+      <div style="font-size:14px;color:rgba(255,255,255,.65);line-height:1.6;">${r.description}</div>
+      <div style="position:absolute;right:-10px;bottom:-10px;font-size:140px;font-weight:700;color:rgba(255,255,255,.03);line-height:1;pointer-events:none;user-select:none;">${r.number}</div>
+    </div>`;
+
+  // Triple cards for seamless marquee loop
+  const marqueeCards = refs.length ? [...refs,...refs,...refs].map(makeCard).join('') : '';
 
   const avatar = contact.photo
     ? `<img src="${contact.photo}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;flex-shrink:0;">`
@@ -81,22 +80,23 @@ function buildHTML(data, input, contact) {
 body{font-family:'Maven Pro',sans-serif;background:#f5f3f0;color:#100c2a;-webkit-font-smoothing:antialiased;}
 nav{background:#100c2a;border-bottom:1px solid rgba(255,255,255,.07);padding:14px 56px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:50;}
 .nc{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:700;color:white;background:linear-gradient(135deg,#ff4b4b,#ff744f);padding:9px 22px;border-radius:99px;text-decoration:none;}
-.hero{position:relative;overflow:hidden;background:#100c2a;padding:56px 56px 64px;min-height:280px;display:flex;align-items:flex-end;}
+.hero{position:relative;overflow:hidden;background:#100c2a;padding:64px 56px 72px;min-height:300px;display:flex;align-items:flex-end;}
 .blob{position:absolute;top:-15%;right:-10%;height:115%;pointer-events:none;opacity:.9;mix-blend-mode:screen;}
-.hc{position:relative;z-index:1;max-width:840px;width:100%;}
-.wrap{max-width:1040px;margin:0 auto;padding:48px 56px 80px;}
+.hc{position:relative;z-index:1;max-width:900px;width:100%;}
+.wrap{max-width:1100px;margin:0 auto;padding:52px 56px 80px;}
 .lbl{font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#ff4b4b;margin-bottom:12px;}
-.wcard{background:white;border-radius:14px;padding:24px;box-shadow:0 1px 6px rgba(0,0,0,.06);}
-.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;}
-.nfc:hover{transform:translateY(-3px);}
-#nfd{background:#100c2a;border-radius:16px;padding:28px;margin-top:14px;display:none;position:relative;overflow:hidden;}
-.cta{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;background:linear-gradient(135deg,#ff4b4b,#ff744f);color:white;font-family:'Maven Pro',sans-serif;font-weight:700;font-size:14px;border-radius:99px;text-decoration:none;}
+.wcard{background:white;border-radius:16px;padding:28px 32px;box-shadow:0 1px 6px rgba(0,0,0,.06);}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;}
+.cta{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;background:linear-gradient(135deg,#ff4b4b,#ff744f);color:white;font-family:'Maven Pro',sans-serif;font-weight:700;font-size:14px;border-radius:99px;text-decoration:none;transition:transform .15s,box-shadow .15s;}
+.cta:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(255,75,75,.35);}
 footer{background:#100c2a;padding:28px 56px;display:flex;justify-content:space-between;align-items:center;}
 .mob{display:none;position:fixed;bottom:0;left:0;right:0;z-index:99;background:white;border-top:1px solid #e5e2dc;padding:12px 16px;}
-#nfx-strip{scrollbar-width:none;-ms-overflow-style:none;}#nfx-strip::-webkit-scrollbar{display:none;}
-@keyframes fi{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-.fi{animation:fi .5s ease both;}.fi2{animation:fi .5s .12s ease both;}
-@media(max-width:700px){nav,.hero,footer{padding-left:20px;padding-right:20px;}.wrap{padding:36px 20px 60px;}.mob{display:block;}body{padding-bottom:68px;}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes marqueeScroll{from{transform:translateX(0)}to{transform:translateX(-33.333%)}}
+.sr{opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .6s ease;}
+.sr.v{opacity:1;transform:none;}
+@media(max-width:700px){nav,.hero,footer,.wrap{padding-left:20px;padding-right:20px;}.mob{display:block;}body{padding-bottom:68px;}}
 </style>
 </head>
 <body>
@@ -110,42 +110,42 @@ footer{background:#100c2a;padding:28px 56px;display:flex;justify-content:space-b
 <section class="hero">
   <div class="blob">${BLOB}</div>
   <div class="hc">
-    <div class="fi" style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;opacity:0;animation:fadeUp .5s .1s ease forwards;">
       <span style="font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.35);">${input.name}</span>
       <span style="width:3px;height:3px;border-radius:50%;background:rgba(255,255,255,.2);"></span>
       <span style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.35);">${input.company}</span>
     </div>
-    <div class="fi2" style="font-size:clamp(26px,3.8vw,48px);font-weight:700;line-height:1.2;max-width:760px;">
-      <span style="background:linear-gradient(135deg,#ff4b4b,#ff744f);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">${firstName},</span>
-      <span style="color:white;"> ${greetingClean}</span>
+    <div style="font-size:clamp(28px,4vw,52px);font-weight:700;line-height:1.15;max-width:820px;opacity:0;animation:fadeUp .6s .25s ease forwards;">
+      <span id="tw-name" style="background:linear-gradient(135deg,#ff4b4b,#ff744f);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;"></span><span id="tw-cursor" style="color:#ff4b4b;animation:blink 1s step-end infinite;">|</span>
+      <span id="tw-rest" style="color:white;opacity:0;transition:opacity .4s ease;"></span>
     </div>
   </div>
 </section>
+
 <div style="background:#f5f3f0;">
 <div class="wrap">
-  <div style="margin-bottom:40px;"><div class="lbl">Your situation</div><div class="wcard"><p style="font-size:16px;line-height:1.8;color:#2a2a2a;">${data.situation||''}</p></div></div>
-  <div style="margin-bottom:40px;"><div class="lbl">What we'd do for ${input.company}</div><div class="card-grid">${approachCards}</div></div>
-  ${refs.length?`<div style="margin-bottom:40px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <div class="lbl" style="margin-bottom:0;">Proven results</div>
-      <div style="display:flex;align-items:center;gap:10px;">
-        <span id="rc" style="font-size:12px;font-weight:600;color:#aaa;">1 / ${refs.length}</span>
-        <button onclick="pRef()" style="width:36px;height:36px;border-radius:50%;border:1.5px solid #ddd;background:white;cursor:pointer;font-size:16px;color:#555;">‹</button>
-        <button onclick="nRef()" style="width:36px;height:36px;border-radius:50%;border:1.5px solid #ddd;background:white;cursor:pointer;font-size:16px;color:#555;">›</button>
-      </div>
+  <div class="sr" style="margin-bottom:40px;"><div class="lbl">Your situation</div><div class="wcard"><p style="font-size:16px;line-height:1.85;color:#2a2a2a;">${data.situation||''}</p></div></div>
+  <div class="sr" style="margin-bottom:40px;"><div class="lbl">What we'd do for ${input.company}</div><div class="card-grid">${approachCards}</div></div>
+</div>
+
+${refs.length?`<div class="sr" style="margin-bottom:40px;">
+  <div style="max-width:1100px;margin:0 auto;padding:0 56px;"><div class="lbl">Proven results</div></div>
+  <div style="overflow:hidden;padding:4px 0 16px;">
+    <div style="display:flex;width:max-content;animation:marqueeScroll ${refs.length*6}s linear infinite;" onmouseenter="this.style.animationPlayState='paused'" onmouseleave="this.style.animationPlayState='running'">
+      ${marqueeCards}
     </div>
-    <div style="overflow:hidden;border-radius:18px;">
-      <div id="rt" style="display:flex;gap:14px;transition:transform .4s cubic-bezier(.4,0,.2,1);">${refSlides}</div>
-    </div>
-  </div>`:''}
-  <div style="margin-bottom:40px;"><div class="lbl">Our proposal for ${input.company}</div>
+  </div>
+</div>`:''}
+
+<div class="wrap" style="padding-top:0;">
+  <div class="sr" style="margin-bottom:32px;"><div class="lbl">Our proposal for ${input.company}</div>
     <div class="wcard">
-      <p style="font-size:15px;color:#444;line-height:1.75;margin-bottom:20px;">${data.next_step||''}</p>
+      <p style="font-size:15px;color:#444;line-height:1.75;margin-bottom:22px;">${data.next_step||''}</p>
       <a href="mailto:${contact.email}?subject=Re: valantic for ${input.company}&body=Hi ${contact.name.split(' ')[0]}," class="cta"><i class="ph ph-calendar-check" style="font-size:15px;"></i> ${data.cta_label||'Book 30 minutes'}</a>
       <div style="font-size:11px;color:#bbb;margin-top:10px;">No deck. No pitch. Just a conversation.</div>
     </div>
   </div>
-  <div class="wcard" style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+  <div class="sr wcard" style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
     ${avatar}
     <div style="flex:1;min-width:180px;">
       <div style="font-size:17px;font-weight:700;color:#100c2a;margin-bottom:3px;">${contact.name}</div>
@@ -156,18 +156,18 @@ footer{background:#100c2a;padding:28px 56px;display:flex;justify-content:space-b
   </div>
 </div>
 </div>
+
 <footer>${LOGO_W}<span style="font-size:12px;color:rgba(255,255,255,.25);">valantic.ai</span></footer>
 <div class="mob"><a href="mailto:${contact.email}" class="cta" style="width:100%;justify-content:center;"><i class="ph ph-calendar-check" style="font-size:15px;"></i> ${data.cta_label||'Book 30 minutes'}</a></div>
+
 <script>
-let ri=0,rl=${JSON.stringify(refs.length)};
-function go(i){
-  const max=Math.max(0,rl-2);
-  ri=Math.max(0,Math.min(i,max));
-  const t=document.getElementById('rt');const c=document.getElementById('rc');
-  if(t){const w=t.children[0]?t.children[0].offsetWidth+14:0;t.style.transform='translateX(-'+(ri*w)+'px)';}
-  if(c)c.textContent=(ri+1)+' / '+Math.max(1,rl-1);
-}
-function nRef(){go(ri+1);}function pRef(){go(ri-1);}
+// Typewriter
+const nm='${firstName},',rest=' ${greetingClean.replace(/'/g,"\\'")}';
+let ni=0;const tw=document.getElementById('tw-name'),cur=document.getElementById('tw-cursor'),tr=document.getElementById('tw-rest');
+const ti=setInterval(()=>{if(ni<=nm.length){if(tw)tw.textContent=nm.slice(0,ni);ni++;}else{clearInterval(ti);if(cur)cur.style.display='none';if(tr){tr.textContent=rest;tr.style.opacity='1';}}},80);
+// Scroll reveal
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('v');obs.unobserve(e.target);}});},{threshold:.08});
+document.querySelectorAll('.sr').forEach(el=>obs.observe(el));
 </script>
 </body>
 </html>`;
