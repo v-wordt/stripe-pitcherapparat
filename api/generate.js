@@ -37,24 +37,20 @@ function buildHTML(data, input, contact) {
   const domain = input.company.toLowerCase().replace(/\s+/g,'').replace(/[^a-z0-9]/g,'') + '.com';
   const refs = data.references || [];
 
-  const refItems = refs.map((r, i) => `
-    <div class="rc" style="${i>0?'display:none;':''}padding:28px;background:rgba(255,255,255,.04);border-radius:14px;border:1px solid rgba(255,255,255,.08);">
-      <div style="font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:12px;">Reference ${i+1} / ${refs.length}</div>
-      <div class="cu" data-n="${r.number}" style="font-size:60px;font-weight:700;line-height:1;color:#ff4b4b;margin-bottom:10px;">${r.number}</div>
-      <div style="font-size:14px;color:rgba(255,255,255,.75);line-height:1.65;margin-bottom:8px;">${r.description}</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.3);">${r.client}</div>
+  const refGrid = refs.map((r) => `
+    <div style="background:#100c2a;border-radius:16px;padding:28px;position:relative;overflow:hidden;flex:1;min-width:180px;">
+      <div style="position:absolute;top:-20px;right:-20px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(255,75,75,.18) 0%,transparent 70%);pointer-events:none;"></div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:14px;">${r.client}</div>
+      <div class="cu" data-n="${r.number}" style="font-size:52px;font-weight:700;line-height:1;color:#ff4b4b;margin-bottom:10px;">${r.number}</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.65);line-height:1.55;">${r.description}</div>
     </div>`).join('');
 
-  const refDots = refs.map((_,i) =>
-    `<span onclick="gr(${i})" style="display:inline-block;width:${i===0?'20px':'7px'};height:7px;border-radius:4px;background:${i===0?'#ff4b4b':'rgba(255,255,255,.2)'};cursor:pointer;transition:all .2s;"></span>`
-  ).join('');
-
   const approachCards = (data.approaches||[]).map((a,i) => `
-    <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:24px;">
-      <div style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#ff4b4b;margin-bottom:10px;">0${i+1}</div>
-      <div style="font-size:15px;font-weight:700;color:white;margin-bottom:8px;line-height:1.3;">${a.title}</div>
-      <div style="font-size:14px;color:rgba(255,255,255,.65);line-height:1.65;margin-bottom:10px;">${a.description}</div>
-      ${a.outcome?`<div style="font-size:12px;font-weight:600;color:#ff744f;border-top:1px solid rgba(255,255,255,.08);padding-top:10px;">→ ${a.outcome}</div>`:''}
+    <div style="background:white;border-radius:14px;padding:24px;box-shadow:0 1px 6px rgba(0,0,0,.06);">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#ff4b4b;margin-bottom:10px;">0${i+1}</div>
+      <div style="font-size:15px;font-weight:700;color:#100c2a;margin-bottom:7px;line-height:1.3;">${a.title}</div>
+      <div style="font-size:14px;color:#555;line-height:1.65;margin-bottom:9px;">${a.description}</div>
+      ${a.outcome?`<div style="font-size:12px;font-weight:600;color:#193773;border-top:1px solid #f0eeee;padding-top:9px;">→ ${a.outcome}</div>`:''}
     </div>`).join('');
 
   const avatar = contact.photo
@@ -120,28 +116,25 @@ footer{background:#100c2a;border-top:none;padding:28px 56px;display:flex;justify
 </section>
 
 <div class="wrap">
-<div class="winn">
-  <div style="margin-bottom:44px;">
-    <div class="lbl">The situation</div>
-    <div class="wcard"><p style="font-size:16px;line-height:1.8;color:#2a2a2a;">${data.situation||''}</p></div>
+<div style="max-width:1040px;margin:0 auto;padding:48px 56px 80px;">
+  <div style="margin-bottom:40px;">
+    <div class="lbl">Your situation</div>
+    <div class="wcard" style="max-width:760px;"><p style="font-size:16px;line-height:1.8;color:#2a2a2a;">${data.situation||''}</p></div>
   </div>
-  <div style="margin-bottom:44px;">
+  <div style="margin-bottom:40px;">
     <div class="lbl">What we'd do for ${input.company}</div>
     <div class="card-grid">${approachCards}</div>
   </div>
-  ${refs.length?`<div style="margin-bottom:44px;">
+  ${refs.length?`<div style="margin-bottom:40px;">
     <div class="lbl">Proven results</div>
-    <div style="position:relative;cursor:pointer;max-width:480px;" onclick="nr()">
-      ${refItems}
-      ${refs.length>1?`<div style="display:flex;gap:6px;align-items:center;margin-top:12px;">${refDots}<span style="font-size:11px;color:#aaa;margin-left:auto;display:flex;align-items:center;gap:3px;"><i class="ph ph-hand-tap" style="font-size:12px;"></i> tap</span></div>`:''}
-    </div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;">${refGrid}</div>
   </div>`:''}
-  <div style="margin-bottom:44px;">
+  <div style="margin-bottom:40px;">
     <div class="lbl">What happens next</div>
-    <div class="nxt">
+    <div class="nxt" style="max-width:520px;">
       <p style="font-size:15px;color:#444;line-height:1.75;margin-bottom:20px;">${data.next_step||''}</p>
       <a href="mailto:${contact.email}?subject=Re: valantic for ${input.company}&body=Hi ${contact.name.split(' ')[0]}," class="cta">
-        <i class="ph ph-calendar-check" style="font-size:16px;"></i> ${data.cta_label||'Book 30 minutes'}
+        <i class="ph ph-calendar-check" style="font-size:15px;"></i> ${data.cta_label||'Book 30 minutes'}
       </a>
       <div style="font-size:11px;color:#bbb;margin-top:10px;">No deck. No pitch. Just a conversation.</div>
     </div>
@@ -161,19 +154,17 @@ footer{background:#100c2a;border-top:none;padding:28px 56px;display:flex;justify
 <div class="mob"><a href="mailto:${contact.email}" class="cta" style="width:100%;justify-content:center;"><i class="ph ph-calendar-check" style="font-size:16px;"></i> ${data.cta_label||'Book 30 minutes'}</a></div>
 
 <script>
-const refs=${JSON.stringify(refs)};let i=0;
-function nr(){if(refs.length<=1)return;i=(i+1)%refs.length;gr(i);}
-function gr(n){i=n;document.querySelectorAll('.rc').forEach((c,j)=>c.style.display=j===n?'':'none');
-  document.querySelectorAll('[onclick^="gr"]').forEach((d,j)=>{d.style.width=j===n?'20px':'7px';d.style.background=j===n?'#ff4b4b':'rgba(255,255,255,.2)';});
-  ac(document.querySelectorAll('.rc')[n]);}
-function ac(card){if(!card)return;const el=card.querySelector('.cu');if(!el)return;
-  const raw=el.dataset.n||'';const num=parseFloat(raw.replace(/[^0-9.]/g,''));
-  const suf=raw.replace(/[0-9.]/g,'');if(isNaN(num))return;
-  const dur=900,s=performance.now();
-  function t(now){const p=Math.min((now-s)/dur,1);const e=1-Math.pow(1-p,3);
-    el.textContent=(Number.isInteger(num)?Math.round(num*e):Math.round(num*e*10)/10)+suf;if(p<1)requestAnimationFrame(t);}
-  requestAnimationFrame(t);}
-window.addEventListener('load',()=>ac(document.querySelector('.rc')));
+document.querySelectorAll('.cu').forEach(el => {
+  const raw = el.dataset.n || '';
+  const num = parseFloat(raw.replace(/[^0-9.]/g,''));
+  const suf = raw.replace(/[0-9.]/g,'');
+  if (isNaN(num)) return;
+  const dur=900, s=performance.now();
+  function t(now){const p=Math.min((now-s)/dur,1),e=1-Math.pow(1-p,3);
+    el.textContent=(Number.isInteger(num)?Math.round(num*e):Math.round(num*e*10)/10)+suf;
+    if(p<1)requestAnimationFrame(t);}
+  requestAnimationFrame(t);
+});
 </script>
 </body>
 </html>`;
