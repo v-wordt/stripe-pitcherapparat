@@ -73,21 +73,14 @@ function buildHTML(data, input, contact) {
     ? hl.replace(hlH, `<em>${hlH}</em>`)
     : `<em>${hl}</em>`;
 
-  const bringHTML = (data.what_we_gain || data.what_we_bring || []).map((a, i) => `
-    <div style="display:flex;gap:24px;padding:16px 0;border-bottom:1px solid rgba(0,0,0,0.07);">
-      <div style="font-size:11px;font-weight:700;color:#ff4b4b;padding-top:3px;min-width:24px;">0${i+1}</div>
-      <div>
-        <h4 style="font-size:17px;font-weight:700;color:#100c2a;margin:0 0 4px;">${a.title}</h4>
-        <p style="font-size:15px;color:#555;line-height:1.65;margin:0 0 6px;">${a.description}</p>
-        <div style="font-size:13px;font-weight:600;color:#999;">→ ${a.proof}</div>
-      </div>
-    </div>`).join('');
+  const firstName = input.name.split(' ')[0];
+  const domain = input.company.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '') + '.com';
 
   const refs = data.references || [];
   const refCards = refs.map((r, i) => `
     <div class="ref-card" data-idx="${i}" style="${i > 0 ? 'display:none;' : ''}">
       <div style="font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,0.35);margin-bottom:12px;">Reference ${i+1} of ${refs.length}</div>
-      <div style="font-size:64px;font-weight:700;line-height:1;background:linear-gradient(135deg,#ff4b4b,#ff744f);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">${r.number}</div>
+      <div class="count-up" data-target="${r.number}" style="font-size:68px;font-weight:700;line-height:1;background:linear-gradient(135deg,#ff4b4b,#ff744f);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">${r.number}</div>
       <div style="font-size:17px;color:rgba(255,255,255,0.75);line-height:1.6;margin:8px 0 6px;">${r.description}</div>
       <div style="font-size:12px;color:rgba(255,255,255,0.3);">${r.client}</div>
     </div>`).join('');
@@ -96,96 +89,156 @@ function buildHTML(data, input, contact) {
     `<div class="ref-dot" data-idx="${i}" style="width:${i===0?'16px':'5px'};height:5px;border-radius:${i===0?'3px':'50%'};background:${i===0?'#ff4b4b':'rgba(0,0,0,0.15)'};transition:all 0.2s;cursor:pointer;" onclick="gotoRef(${i})"></div>`
   ).join('');
 
-  const avatar = contact.photo
-    ? `<img src="${contact.photo}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;" />`
-    : `<div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#ff4b4b,#ff744f);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:white;flex-shrink:0;">${contact.initials || 'VS'}</div>`;
+  const bringHTML = (data.what_we_gain || data.what_we_bring || []).map((a, i) => `
+    <div class="fade-in-up" style="display:flex;gap:20px;padding:20px 0;border-bottom:1px solid rgba(0,0,0,0.06);">
+      <div style="font-size:11px;font-weight:700;color:#ff4b4b;padding-top:4px;min-width:20px;letter-spacing:.05em;">0${i+1}</div>
+      <div>
+        <h4 style="font-size:17px;font-weight:700;color:#100c2a;margin:0 0 5px;">${a.title}</h4>
+        <p style="font-size:15px;color:#555;line-height:1.65;margin:0 0 6px;">${a.description}</p>
+        <div style="font-size:13px;font-weight:600;color:#bbb;display:flex;align-items:center;gap:5px;">
+          <span style="color:#ff4b4b;">→</span> ${a.proof}
+        </div>
+      </div>
+    </div>`).join('');
 
-  const LOGO = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="232 216 1500 325" style="height:20px;width:auto;"><path fill="#FFFFFF" d="M1678,456.2c-7.8,14.8-24.3,23.9-43.6,23.9c-30,0-51.8-22.4-51.8-53.2s21.8-53.2,51.8-53.2c19.2,0,35.3,8.9,43.6,23.9l54-31.4c-19.3-33.1-56.2-53.6-96.8-53.6c-65.4,0-114.7,49.1-114.7,114.2S1569.8,541,1635.2,541c40.6,0,77.5-20.6,96.8-54L1678,456.2z"/><rect fill="#FFFFFF" x="1439" y="318.8" width="62" height="216.2"/><path fill="#FFFFFF" d="M1470,216.1c-20.4,0-37.6,17.2-37.6,37.6s17.2,37.6,37.6,37.6s37.6-17.2,37.6-37.6S1490.4,216.1,1470,216.1z"/><path fill="#FFFFFF" d="M1331.8,519.9c16.2,14.6,44.1,19.5,87.8,15.2v-55.9c-19.9,1.1-32.8,0.3-39.9-6.3c-3.7-3.5-5.5-8.3-5.5-14.8v-80h45.4v-59.4h-45.4v-75.9l-62,18.6v57.3H1277V378h35.2v80C1312.2,488.2,1318.4,507.8,1331.8,519.9z"/><path fill="#FFFFFF" d="M1163.4,374.6c23,0,41.7,18.7,41.7,41.7v118.6h62V402.1c0-49.4-40-89.5-89.4-89.5c-18.9,0-37.4,6-52.7,17.2l-3.3,2.4v-13.4h-62V535h62V416.3C1121.8,393.3,1140.4,374.6,1163.4,374.6z"/><path fill="#FFFFFF" d="M1029.2,534.9V318.8h-62v24.1l-3.6-4.1c-15-17.4-36.6-26.2-64.1-26.2c-27.5,0-53.4,11.7-72.8,32.9c-19.7,21.5-30.5,50.4-30.5,81.4s10.8,59.9,30.5,81.4c19.4,21.2,45.2,32.9,72.8,32.9c27.6,0,49-8.8,64.1-26.2l3.6-4.1V535L1029.2,534.9z M912.8,482.6c-32.6,0-54.5-22.4-54.5-55.8s21.9-55.8,54.5-55.8c32.6,0,54.5,22.4,54.5,55.8S945.3,482.6,912.8,482.6z"/><polygon fill="#FFFFFF" points="714.8,234.7 714.8,534.9 776.8,534.9 776.8,216.1"/><path fill="#FFFFFF" d="M684.3,534.9V318.8h-62v24.1l-3.6-4.1c-15.1-17.4-36.6-26.2-64.1-26.2c-27.5,0-53.4,11.7-72.8,32.9c-19.6,21.5-30.5,50.4-30.5,81.4s10.8,59.9,30.5,81.4c19.4,21.2,45.2,32.9,72.8,32.9c27.5,0,49-8.8,64.1-26.2l3.6-4.1V535L684.3,534.9z M567.8,482.6c-32.6,0-54.5-22.4-54.5-55.8s21.9-55.8,54.5-55.8c32.6,0,54.5,22.4,54.5,55.8S600.4,482.6,567.8,482.6z"/><polygon fill="#FFFFFF" points="395.3,318.8 348,463 300.7,318.8 232,318.8 312,534.9 384,534.9 464,318.8"/></svg>`;
+  const avatar = contact.photo
+    ? `<img src="${contact.photo}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;flex-shrink:0;" />`
+    : `<div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#ff4b4b,#ff744f);display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:700;color:white;flex-shrink:0;">${contact.initials || 'VS'}</div>`;
+
+  const LOGO = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="232 216 1500 325" style="height:22px;width:auto;"><path fill="#FFFFFF" d="M1678,456.2c-7.8,14.8-24.3,23.9-43.6,23.9c-30,0-51.8-22.4-51.8-53.2s21.8-53.2,51.8-53.2c19.2,0,35.3,8.9,43.6,23.9l54-31.4c-19.3-33.1-56.2-53.6-96.8-53.6c-65.4,0-114.7,49.1-114.7,114.2S1569.8,541,1635.2,541c40.6,0,77.5-20.6,96.8-54L1678,456.2z"/><rect fill="#FFFFFF" x="1439" y="318.8" width="62" height="216.2"/><path fill="#FFFFFF" d="M1470,216.1c-20.4,0-37.6,17.2-37.6,37.6s17.2,37.6,37.6,37.6s37.6-17.2,37.6-37.6S1490.4,216.1,1470,216.1z"/><path fill="#FFFFFF" d="M1331.8,519.9c16.2,14.6,44.1,19.5,87.8,15.2v-55.9c-19.9,1.1-32.8,0.3-39.9-6.3c-3.7-3.5-5.5-8.3-5.5-14.8v-80h45.4v-59.4h-45.4v-75.9l-62,18.6v57.3H1277V378h35.2v80C1312.2,488.2,1318.4,507.8,1331.8,519.9z"/><path fill="#FFFFFF" d="M1163.4,374.6c23,0,41.7,18.7,41.7,41.7v118.6h62V402.1c0-49.4-40-89.5-89.4-89.5c-18.9,0-37.4,6-52.7,17.2l-3.3,2.4v-13.4h-62V535h62V416.3C1121.8,393.3,1140.4,374.6,1163.4,374.6z"/><path fill="#FFFFFF" d="M1029.2,534.9V318.8h-62v24.1l-3.6-4.1c-15-17.4-36.6-26.2-64.1-26.2c-27.5,0-53.4,11.7-72.8,32.9c-19.7,21.5-30.5,50.4-30.5,81.4s10.8,59.9,30.5,81.4c19.4,21.2,45.2,32.9,72.8,32.9c27.6,0,49-8.8,64.1-26.2l3.6-4.1V535L1029.2,534.9z M912.8,482.6c-32.6,0-54.5-22.4-54.5-55.8s21.9-55.8,54.5-55.8c32.6,0,54.5,22.4,54.5,55.8S945.3,482.6,912.8,482.6z"/><polygon fill="#FFFFFF" points="714.8,234.7 714.8,534.9 776.8,534.9 776.8,216.1"/><path fill="#FFFFFF" d="M684.3,534.9V318.8h-62v24.1l-3.6-4.1c-15.1-17.4-36.6-26.2-64.1-26.2c-27.5,0-53.4,11.7-72.8,32.9c-19.6,21.5-30.5,50.4-30.5,81.4s10.8,59.9,30.5,81.4c19.4,21.2,45.2,32.9,72.8,32.9c27.5,0,49-8.8,64.1-26.2l3.6-4.1V535L684.3,534.9z M567.8,482.6c-32.6,0-54.5-22.4-54.5-55.8s21.9-55.8,54.5-55.8c32.6,0,54.5,22.4,54.5,55.8S600.4,482.6,567.8,482.6z"/><polygon fill="#FFFFFF" points="395.3,318.8 348,463 300.7,318.8 232,318.8 312,534.9 384,534.9 464,318.8"/></svg>`;
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${data.headline || 'valantic'} · For ${input.name}</title>
+  <title>For ${input.name} · valantic</title>
   <link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/@phosphor-icons/web@2.1.2"></script>
   <style>
     *{box-sizing:border-box;margin:0;padding:0;}
-    body{font-family:'Maven Pro',sans-serif;background:#f5f4f1;color:#100c2a;}
+    body{font-family:'Maven Pro',sans-serif;background:#f5f4f1;color:#100c2a;overflow-x:hidden;}
     h1 em{font-style:normal;background:linear-gradient(135deg,#ff4b4b,#ff744f);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+
+    /* ── Animations ── */
+    @keyframes fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+    @keyframes slideInName { from{opacity:0;transform:translateY(-12px) scale(0.95)} to{opacity:1;transform:translateY(0) scale(1)} }
+
+    .hero-name { animation: slideInName 0.7s cubic-bezier(.2,0,.2,1) 0.1s both; }
+    .hero-headline { animation: fadeUp 0.7s cubic-bezier(.2,0,.2,1) 0.3s both; }
+    .hero-tagline { animation: fadeUp 0.7s cubic-bezier(.2,0,.2,1) 0.5s both; }
+    .fade-in-up { opacity:0; transform:translateY(20px); transition:opacity 0.6s ease, transform 0.6s ease; }
+    .fade-in-up.visible { opacity:1; transform:translateY(0); }
+
+    /* ── Logo strip ── */
+    .company-logo { height:28px; width:auto; object-fit:contain; opacity:0.7; filter:grayscale(1); }
+
+    /* ── CTA ── */
+    .cta-primary {
+      display:inline-flex; align-items:center; gap:10px;
+      padding:16px 32px; background:linear-gradient(135deg,#ff4b4b,#ff744f);
+      color:white; font-family:'Maven Pro',sans-serif; font-weight:700; font-size:16px;
+      border-radius:12px; text-decoration:none; transition:transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 20px rgba(255,75,75,0.35);
+    }
+    .cta-primary:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(255,75,75,0.45); }
+
+    /* ── Sticky CTA bar (mobile) ── */
+    .sticky-cta {
+      display:none; position:fixed; bottom:0; left:0; right:0; z-index:99;
+      background:white; border-top:1px solid #e8e5f0; padding:12px 20px;
+    }
+    @media(max-width:640px){
+      .sticky-cta { display:block; }
+      body { padding-bottom: 70px; }
+    }
   </style>
 </head>
 <body>
 
 <!-- NAV -->
-<div style="background:#100c2a;padding:14px 48px;display:flex;justify-content:flex-end;align-items:center;">
+<div style="background:#100c2a;padding:14px 48px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:50;">
   ${LOGO}
+  <div style="display:flex;align-items:center;gap:12px;">
+    <img src="https://logo.clearbit.com/${domain}" class="company-logo" onerror="this.style.display='none'" alt="${input.company}">
+    <a href="mailto:${contact.email}" style="font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:700;color:rgba(255,255,255,0.6);text-decoration:none;padding:7px 16px;border:1.5px solid rgba(255,255,255,0.15);border-radius:8px;transition:all 0.15s;">Get in touch</a>
+  </div>
 </div>
 
 <!-- HERO -->
-<div style="position:relative;overflow:hidden;background:#100c2a;padding:72px 48px 80px;">
-  <div style="position:absolute;top:-20%;right:-8%;height:130%;pointer-events:none;opacity:0.55;mix-blend-mode:screen;">
-    <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1015.91 1154.31" style="height:100%;width:auto;"><defs><linearGradient id="g1" gradientUnits="userSpaceOnUse" x1="0" y1="577" x2="1016" y2="577"><stop offset="0" style="stop-color:#FF4B4B"/><stop offset="1" style="stop-color:#FF744F"/></linearGradient></defs><path fill="url(#g1)" d="M812.3,47.5C694.8-31.8,530.7,12.9,415.6,89.7C300.5,166.5,185.4,276.2,113.2,408.8C41,541.4,11.7,697.8,47.6,840.1c35.9,142.3,136.9,270.4,266.7,316.2c129.8,45.8,288.3-0.6,407.4-82.1c119.1-81.5,199-197.8,264.9-318.7c65.9-120.9,117.8-246.4,121.9-374.2C1112.6,253.5,1059.3,156.1,975,99.5C933.8,71.3,875.2,53.8,812.3,47.5z"/></svg>
+<div style="position:relative;overflow:hidden;background:#100c2a;padding:56px 48px 72px;">
+  <!-- Clean geometric accent — no blob -->
+  <div style="position:absolute;top:0;right:0;width:50%;height:100%;pointer-events:none;overflow:hidden;">
+    <div style="position:absolute;top:-30%;right:-20%;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(255,75,75,0.12) 0%,transparent 70%);"></div>
+    <div style="position:absolute;bottom:-10%;right:5%;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(255,116,79,0.08) 0%,transparent 70%);"></div>
   </div>
-  <div style="position:relative;z-index:1;max-width:700px;">
-    <div style="font-size:12px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:#ff744f;margin-bottom:16px;">For ${input.name} · ${input.company}</div>
-    <h1 style="font-size:clamp(30px,4.5vw,52px);font-weight:700;line-height:1.1;color:white;max-width:720px;margin-bottom:16px;">${headlineHTML}</h1>
-    <p style="font-size:18px;color:rgba(255,255,255,0.6);max-width:560px;line-height:1.65;">${data.tagline || ''}</p>
+
+  <div style="position:relative;z-index:1;max-width:680px;">
+    <!-- Big personalised name — the first thing Mirko sees -->
+    <div class="hero-name" style="margin-bottom:20px;">
+      <span style="font-size:13px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,0.35);">Prepared for</span>
+      <div style="font-size:clamp(36px,5vw,56px);font-weight:700;color:white;line-height:1;margin-top:4px;">${input.name}</div>
+      <div style="font-size:15px;color:rgba(255,255,255,0.4);margin-top:4px;">${input.role ? input.role + ' · ' : ''}${input.company}</div>
+    </div>
+
+    <div style="height:1px;background:linear-gradient(90deg,rgba(255,75,75,0.4),transparent);margin-bottom:24px;width:120px;"></div>
+
+    <h1 class="hero-headline" style="font-size:clamp(24px,3.5vw,40px);font-weight:700;line-height:1.15;color:white;max-width:600px;margin-bottom:16px;">${headlineHTML}</h1>
+    <p class="hero-tagline" style="font-size:17px;color:rgba(255,255,255,0.55);max-width:520px;line-height:1.65;">${data.tagline || ''}</p>
   </div>
 </div>
 
 <!-- BODY -->
-<div style="max-width:720px;margin:0 auto;padding:64px 48px 80px;">
+<div style="max-width:700px;margin:0 auto;padding:56px 48px 80px;">
 
-  <!-- Situation -->
-  <div style="margin-bottom:56px;">
-    <div style="font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#ff4b4b;margin-bottom:12px;">The situation</div>
-    <p style="font-size:19px;line-height:1.75;color:#2a2a2a;">${data.situation || ''}</p>
+  <!-- Situation — the "how do they know this?" moment -->
+  <div class="fade-in-up" style="margin-bottom:52px;">
+    <p style="font-size:19px;line-height:1.8;color:#2a2a2a;">${data.situation || ''}</p>
   </div>
 
-  <!-- What you gain -->
-  <div style="margin-bottom:56px;">
-    <div style="font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#ff4b4b;margin-bottom:8px;">What you'll gain</div>
+  <!-- What we'd do — flows from the situation -->
+  <div class="fade-in-up" style="margin-bottom:52px;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#ff4b4b;margin-bottom:4px;">Here's what we'd do for ${firstName}</div>
+    <div style="height:2px;background:linear-gradient(90deg,#ff4b4b,#ff744f,transparent);margin-bottom:20px;"></div>
     ${bringHTML}
   </div>
 
-  <!-- Reference stack -->
+  <!-- Reference stack with animated counter -->
   ${refs.length ? `
-  <div style="margin-bottom:56px;">
-    <div style="font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#ff4b4b;margin-bottom:16px;">References</div>
-    <div onclick="nextRef()" style="cursor:pointer;position:relative;">
-      <div style="position:absolute;left:8px;right:8px;bottom:-6px;height:100%;background:rgba(16,12,42,0.55);border-radius:16px;transform:scale(0.97);"></div>
-      <div style="position:absolute;left:14px;right:14px;bottom:-12px;height:100%;background:rgba(16,12,42,0.3);border-radius:16px;transform:scale(0.94);"></div>
-      <div style="background:#100c2a;border-radius:16px;padding:40px;position:relative;overflow:hidden;">
+  <div class="fade-in-up" style="margin-bottom:52px;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#ff4b4b;margin-bottom:16px;">Proven at companies like yours</div>
+    <div onclick="nextRef()" style="cursor:pointer;position:relative;user-select:none;">
+      <div style="position:absolute;left:8px;right:8px;bottom:-6px;height:100%;background:rgba(16,12,42,0.5);border-radius:18px;"></div>
+      <div style="position:absolute;left:14px;right:14px;bottom:-11px;height:100%;background:rgba(16,12,42,0.28);border-radius:18px;"></div>
+      <div style="background:#100c2a;border-radius:18px;padding:36px 40px;position:relative;overflow:hidden;">
         ${refCards}
-        <div style="position:absolute;right:-8%;top:-15%;height:120%;pointer-events:none;opacity:0.18;mix-blend-mode:screen;">
-          <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 838 1126" style="height:100%;width:auto;"><defs><linearGradient id="g2" gradientUnits="userSpaceOnUse" x1="0" y1="563" x2="838" y2="563"><stop offset="0" style="stop-color:#FF4B4B"/><stop offset="1" style="stop-color:#FF744F"/></linearGradient></defs><path fill="url(#g2)" d="M419,20C200,20,20,200,20,419s180,399,399,399s399-180,399-399S638,20,419,20z"/></svg>
-        </div>
+        <div style="position:absolute;right:-5%;bottom:-20%;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(255,75,75,0.15) 0%,transparent 70%);pointer-events:none;"></div>
       </div>
     </div>
-    <div style="display:flex;gap:6px;margin-top:12px;align-items:center;">
+    <div style="display:flex;gap:6px;margin-top:14px;align-items:center;">
       ${dots}
-      ${refs.length > 1 ? `<span style="font-size:11px;color:rgba(0,0,0,0.3);margin-left:auto;">tap to browse</span>` : ''}
+      ${refs.length > 1 ? `<span style="font-size:11px;color:rgba(0,0,0,0.25);margin-left:auto;display:flex;align-items:center;gap:4px;"><i class="ph ph-hand-tap" style="font-size:13px;"></i> tap to browse</span>` : ''}
     </div>
   </div>` : ''}
 
-  <!-- Next step -->
-  <div style="background:white;border:1.5px solid #e8e5f0;border-radius:16px;padding:32px;margin-bottom:56px;">
-    <div style="font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#ff4b4b;margin-bottom:12px;">Proposed next step</div>
-    <p style="font-size:16px;color:#555;line-height:1.7;margin-bottom:24px;">${data.next_step || ''}</p>
-    <a href="mailto:${contact.email}" style="display:inline-flex;align-items:center;gap:8px;padding:13px 24px;background:linear-gradient(135deg,#ff4b4b,#ff744f);color:white;font-family:'Maven Pro',sans-serif;font-weight:700;font-size:15px;border-radius:9px;text-decoration:none;">
-      <i class="ph ph-calendar-check" style="font-size:17px;"></i>
-      ${data.cta_label || 'Get in touch'}
+  <!-- Next step + CTA — low friction -->
+  <div class="fade-in-up" style="background:white;border-radius:18px;padding:36px;margin-bottom:48px;box-shadow:0 2px 20px rgba(0,0,0,0.06);">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#ff4b4b;margin-bottom:12px;">What happens next</div>
+    <p style="font-size:16px;color:#444;line-height:1.75;margin-bottom:28px;">${data.next_step || ''}</p>
+    <a href="mailto:${contact.email}?subject=Re: valantic for ${input.company}&body=Hi ${contact.name.split(' ')[0]}," class="cta-primary">
+      <i class="ph ph-calendar-check" style="font-size:19px;"></i>
+      ${data.cta_label || 'Book 30 minutes'}
     </a>
+    <div style="font-size:13px;color:#aaa;margin-top:14px;">No deck, no pitch. Just a conversation.</div>
   </div>
 
-  <!-- Contact -->
-  <div style="display:flex;align-items:center;gap:20px;padding-top:32px;border-top:1px solid rgba(0,0,0,0.08);">
+  <!-- Contact — human, not corporate -->
+  <div class="fade-in-up" style="display:flex;align-items:center;gap:20px;">
     ${avatar}
     <div>
       <div style="font-size:16px;font-weight:700;color:#100c2a;">${contact.name}</div>
-      <div style="font-size:13px;color:#888;margin-bottom:4px;">${contact.role}</div>
+      <div style="font-size:13px;color:#888;margin-bottom:6px;">${contact.role}</div>
       <a href="mailto:${contact.email}" style="font-size:13px;color:#ff4b4b;text-decoration:none;font-weight:600;">${contact.email}</a>
     </div>
   </div>
@@ -193,19 +246,29 @@ function buildHTML(data, input, contact) {
 </div>
 
 <!-- FOOTER -->
-<div style="text-align:center;padding:48px;background:#100c2a;">
+<div style="text-align:center;padding:40px 48px;background:#100c2a;">
   ${LOGO}
-  <div style="font-size:12px;color:rgba(255,255,255,0.2);margin-top:12px;">Prepared by valantic · valantic.ai</div>
+  <div style="font-size:12px;color:rgba(255,255,255,0.18);margin-top:10px;">Prepared by valantic · valantic.ai</div>
+</div>
+
+<!-- STICKY MOBILE CTA -->
+<div class="sticky-cta">
+  <a href="mailto:${contact.email}?subject=Re: valantic for ${input.company}" class="cta-primary" style="width:100%;justify-content:center;">
+    <i class="ph ph-calendar-check" style="font-size:18px;"></i>
+    ${data.cta_label || 'Book 30 minutes'}
+  </a>
 </div>
 
 <script>
 const refs = ${JSON.stringify(refs)};
 let idx = 0;
+
 function nextRef() {
   if (refs.length <= 1) return;
   idx = (idx + 1) % refs.length;
   gotoRef(idx);
 }
+
 function gotoRef(i) {
   idx = i;
   document.querySelectorAll('.ref-card').forEach((c, j) => c.style.display = j === i ? '' : 'none');
@@ -214,7 +277,41 @@ function gotoRef(i) {
     d.style.borderRadius = j === i ? '3px' : '50%';
     d.style.background = j === i ? '#ff4b4b' : 'rgba(0,0,0,0.15)';
   });
+  // animate counter on new card
+  animateCounter(document.querySelectorAll('.ref-card')[i]);
 }
+
+function animateCounter(card) {
+  if (!card) return;
+  const el = card.querySelector('.count-up');
+  if (!el) return;
+  const raw = el.dataset.target || '';
+  const num = parseFloat(raw.replace(/[^0-9.]/g, ''));
+  const suffix = raw.replace(/[0-9.]/g, '');
+  if (isNaN(num)) return;
+  const start = 0;
+  const duration = 1200;
+  const startTime = performance.now();
+  function tick(now) {
+    const p = Math.min((now - startTime) / duration, 1);
+    const ease = 1 - Math.pow(1 - p, 3);
+    const val = Math.round(start + (num - start) * ease * 10) / 10;
+    el.textContent = (Number.isInteger(num) ? Math.round(val) : val) + suffix;
+    if (p < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+// Scroll fade-in
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+}, { threshold: 0.15 });
+document.querySelectorAll('.fade-in-up').forEach(el => observer.observe(el));
+
+// Animate first ref counter on load
+window.addEventListener('load', () => {
+  animateCounter(document.querySelector('.ref-card'));
+});
 </script>
 </body>
 </html>`;
@@ -263,7 +360,7 @@ export default async function handler(req, res) {
     const prefix = `${name.split(' ')[0].toLowerCase()}-${company.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`;
     const slug = `${prefix}-${uuidv4().slice(0, 8)}`;
 
-    // 4. Store in Vercel Blob
+    // 4. Store in Vercel Blob (public store required)
     const blob = await put(`pitches/${slug}.html`, html, {
       access: 'public',
       contentType: 'text/html; charset=utf-8',
