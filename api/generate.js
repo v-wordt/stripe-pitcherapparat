@@ -51,16 +51,14 @@ function buildHTML(data, input, contact) {
     </div>`).join('');
 
   const refSlides = refs.map((r) => `
-    <div style="flex:0 0 100%;background:#100c2a;border-radius:18px;padding:40px 48px;position:relative;overflow:hidden;min-height:200px;display:flex;align-items:center;gap:48px;">
-      <div style="flex-shrink:0;">
-        <div style="font-size:clamp(56px,8vw,88px);font-weight:700;line-height:1;color:#ff4b4b;">${r.number}</div>
+    <div style="flex:0 0 calc(50% - 7px);background:#100c2a;border-radius:18px;padding:32px;position:relative;overflow:hidden;min-height:200px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+        <img src="https://logo.clearbit.com/${(r.client||'').toLowerCase().replace(/[^a-z0-9]/g,'')}.com" style="height:16px;width:auto;opacity:.45;filter:brightness(10);" onerror="this.style.display='none'" alt="">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.35);">${r.client}</div>
       </div>
-      <div style="width:1px;height:72px;background:rgba(255,255,255,.1);flex-shrink:0;"></div>
-      <div style="flex:1;">
-        <div style="font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:12px;">${r.client}</div>
-        <div style="font-size:16px;color:rgba(255,255,255,.8);line-height:1.65;">${r.description}</div>
-      </div>
-      <div style="position:absolute;right:-20px;top:50%;transform:translateY(-50%);font-size:180px;font-weight:700;color:rgba(255,255,255,.03);line-height:1;pointer-events:none;user-select:none;">${r.number}</div>
+      <div style="font-size:clamp(44px,6vw,72px);font-weight:700;line-height:1;color:#ff4b4b;margin-bottom:12px;">${r.number}</div>
+      <div style="font-size:14px;color:rgba(255,255,255,.7);line-height:1.6;">${r.description}</div>
+      <div style="position:absolute;right:-10px;bottom:-10px;font-size:130px;font-weight:700;color:rgba(255,255,255,.03);line-height:1;pointer-events:none;user-select:none;">${r.number}</div>
     </div>`).join('');
 
   const avatar = contact.photo
@@ -117,8 +115,9 @@ footer{background:#100c2a;padding:28px 56px;display:flex;justify-content:space-b
       <span style="width:3px;height:3px;border-radius:50%;background:rgba(255,255,255,.2);"></span>
       <span style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.35);">${input.company}</span>
     </div>
-    <div class="fi2" style="font-size:clamp(26px,3.8vw,48px);font-weight:700;line-height:1.15;color:white;max-width:720px;">
-      ${heroMain} <span style="background:linear-gradient(135deg,#ff4b4b,#ff744f);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">${lastWord}</span>
+    <div class="fi2" style="font-size:clamp(26px,3.8vw,48px);font-weight:700;line-height:1.2;max-width:760px;">
+      <span style="background:linear-gradient(135deg,#ff4b4b,#ff744f);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">${firstName},</span>
+      <span style="color:white;"> ${greetingClean}</span>
     </div>
   </div>
 </section>
@@ -135,8 +134,8 @@ footer{background:#100c2a;padding:28px 56px;display:flex;justify-content:space-b
         <button onclick="nRef()" style="width:36px;height:36px;border-radius:50%;border:1.5px solid #ddd;background:white;cursor:pointer;font-size:16px;color:#555;">›</button>
       </div>
     </div>
-    <div style="position:relative;overflow:hidden;border-radius:18px;">
-      <div id="rt" style="display:flex;transition:transform .35s cubic-bezier(.4,0,.2,1);">${refSlides}</div>
+    <div style="overflow:hidden;border-radius:18px;">
+      <div id="rt" style="display:flex;gap:14px;transition:transform .4s cubic-bezier(.4,0,.2,1);">${refSlides}</div>
     </div>
   </div>`:''}
   <div style="margin-bottom:40px;"><div class="lbl">Our proposal for ${input.company}</div>
@@ -160,8 +159,14 @@ footer{background:#100c2a;padding:28px 56px;display:flex;justify-content:space-b
 <footer>${LOGO_W}<span style="font-size:12px;color:rgba(255,255,255,.25);">valantic.ai</span></footer>
 <div class="mob"><a href="mailto:${contact.email}" class="cta" style="width:100%;justify-content:center;"><i class="ph ph-calendar-check" style="font-size:15px;"></i> ${data.cta_label||'Book 30 minutes'}</a></div>
 <script>
-let ri=0,rl=${JSON.stringify(refs)}.length;
-function go(i){ri=(i+rl)%rl;const t=document.getElementById('rt');const c=document.getElementById('rc');if(t)t.style.transform='translateX(-'+(ri*100)+'%)';if(c)c.textContent=(ri+1)+' / '+rl;}
+let ri=0,rl=${JSON.stringify(refs.length)};
+function go(i){
+  const max=Math.max(0,rl-2);
+  ri=Math.max(0,Math.min(i,max));
+  const t=document.getElementById('rt');const c=document.getElementById('rc');
+  if(t){const w=t.children[0]?t.children[0].offsetWidth+14:0;t.style.transform='translateX(-'+(ri*w)+'px)';}
+  if(c)c.textContent=(ri+1)+' / '+Math.max(1,rl-1);
+}
 function nRef(){go(ri+1);}function pRef(){go(ri-1);}
 </script>
 </body>
