@@ -83,18 +83,18 @@ function buildHTML(data, input, contact) {
 body{font-family:'Maven Pro',sans-serif;background:#100c2a;color:white;-webkit-font-smoothing:antialiased;}
 nav{background:#100c2a;border-bottom:1px solid rgba(255,255,255,.07);padding:14px 56px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:50;}
 .nc{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:700;color:white;background:linear-gradient(135deg,#ff4b4b,#ff744f);padding:9px 22px;border-radius:99px;text-decoration:none;}
-.hero{position:relative;overflow:hidden;background:#100c2a;padding:72px 56px 80px;min-height:380px;display:flex;align-items:flex-end;}
-.blob{position:absolute;top:-15%;right:-10%;height:110%;pointer-events:none;opacity:0.85;mix-blend-mode:screen;}
+.hero{position:relative;overflow:hidden;background:#100c2a;padding:60px 56px 68px;min-height:280px;display:flex;align-items:flex-end;}
+.blob{position:absolute;top:-15%;right:-10%;height:110%;pointer-events:none;opacity:.85;mix-blend-mode:screen;}
 .hc{position:relative;z-index:1;max-width:640px;}
-.wrap{max-width:800px;margin:0 auto;padding:52px 56px 80px;}
-.sec-title{font-size:26px;font-weight:700;color:white;margin-bottom:20px;}
+.wrap{background:#f5f3f0;}.winn{max-width:800px;margin:0 auto;padding:52px 56px 80px;}
+.lbl{font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#ff4b4b;margin-bottom:14px;}
 .card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;}
-.sit-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:28px;}
-.nxt{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:28px;}
-.cta{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;background:linear-gradient(135deg,#ff4b4b,#ff744f);color:white;font-family:'Maven Pro',sans-serif;font-weight:700;font-size:14px;border-radius:99px;text-decoration:none;margin-top:20px;}
-.ct{display:flex;align-items:center;gap:14px;padding:24px 0;border-top:1px solid rgba(255,255,255,.08);}
-footer{background:rgba(255,255,255,.03);border-top:1px solid rgba(255,255,255,.07);padding:28px 56px;display:flex;justify-content:space-between;align-items:center;}
-.mob{display:none;position:fixed;bottom:0;left:0;right:0;z-index:99;background:#100c2a;border-top:1px solid rgba(255,255,255,.08);padding:12px 16px;}
+.wcard{background:white;border-radius:14px;padding:24px;box-shadow:0 1px 6px rgba(0,0,0,.06);}
+.nxt{background:white;border-radius:16px;padding:26px;box-shadow:0 1px 6px rgba(0,0,0,.06);}
+.cta{display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:linear-gradient(135deg,#ff4b4b,#ff744f);color:white;font-family:'Maven Pro',sans-serif;font-weight:700;font-size:14px;border-radius:99px;text-decoration:none;margin-top:18px;}
+.ct{display:flex;align-items:center;gap:14px;padding:20px 0;border-top:1px solid #e5e2dc;}
+footer{background:#100c2a;border-top:none;padding:28px 56px;display:flex;justify-content:space-between;align-items:center;}
+.mob{display:none;position:fixed;bottom:0;left:0;right:0;z-index:99;background:white;border-top:1px solid #e5e2dc;padding:12px 16px;}
 @keyframes fi{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 .fi{animation:fi .5s ease both;}.fi2{animation:fi .5s .12s ease both;}.fi3{animation:fi .5s .24s ease both;}
 @media(max-width:700px){nav,.wrap,footer{padding-left:20px;padding-right:20px;}.hero{padding:44px 20px 52px;}.mob{display:block;}body{padding-bottom:68px;}}
@@ -113,53 +113,48 @@ footer{background:rgba(255,255,255,.03);border-top:1px solid rgba(255,255,255,.0
 <section class="hero">
   <div class="blob">${BLOB}</div>
   <div class="hc">
-    <div class="fi" style="font-size:12px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:14px;">${input.role?input.role+' · ':''}${input.company}</div>
-    <div class="fi2" style="font-size:clamp(40px,6vw,68px);font-weight:700;line-height:1.05;background:linear-gradient(135deg,#ff4b4b,#ff744f);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:14px;">${firstName},</div>
-    <div class="fi3" style="font-size:clamp(15px,2vw,20px);font-weight:400;color:rgba(255,255,255,.72);line-height:1.55;max-width:520px;margin-bottom:24px;">${(data.greeting||'').replace(new RegExp('^'+firstName+'[,.]?\\s*','i'),'')}</div>
-    <a href="mailto:${contact.email}?subject=Re: valantic for ${input.company}" class="fi3 cta" style="margin-top:0;">
-      <i class="ph ph-calendar-check" style="font-size:16px;"></i> ${data.cta_label||'Book 30 minutes'}
-    </a>
+    <div class="fi" style="font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:14px;">${input.name} · ${input.company}</div>
+    <div class="fi2" style="font-size:clamp(36px,5.5vw,60px);font-weight:700;line-height:1.05;background:linear-gradient(135deg,#ff4b4b,#ff744f);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:12px;">${firstName},</div>
+    <div class="fi3" style="font-size:clamp(14px,1.8vw,18px);font-weight:400;color:rgba(255,255,255,.62);line-height:1.6;max-width:500px;">${(data.greeting||'').replace(new RegExp('^'+firstName+'[,.]?\s*','i'),'')}</div>
   </div>
 </section>
 
 <div class="wrap">
+<div class="winn">
   <div style="margin-bottom:44px;">
-    <div class="sec-title">The situation</div>
-    <div class="sit-card"><p style="font-size:16px;line-height:1.8;color:rgba(255,255,255,.8);">${data.situation||''}</p></div>
+    <div class="lbl">The situation</div>
+    <div class="wcard"><p style="font-size:16px;line-height:1.8;color:#2a2a2a;">${data.situation||''}</p></div>
   </div>
-
   <div style="margin-bottom:44px;">
-    <div class="sec-title">What we'd do for ${input.company}</div>
+    <div class="lbl">What we'd do for ${input.company}</div>
     <div class="card-grid">${approachCards}</div>
   </div>
-
   ${refs.length?`<div style="margin-bottom:44px;">
-    <div class="sec-title">Proven results</div>
+    <div class="lbl">Proven results</div>
     <div style="position:relative;cursor:pointer;max-width:480px;" onclick="nr()">
       ${refItems}
-      ${refs.length>1?`<div style="display:flex;gap:6px;align-items:center;margin-top:12px;">${refDots}<span style="font-size:11px;color:rgba(255,255,255,.3);margin-left:auto;display:flex;align-items:center;gap:3px;"><i class="ph ph-hand-tap" style="font-size:12px;"></i> tap</span></div>`:''}
+      ${refs.length>1?`<div style="display:flex;gap:6px;align-items:center;margin-top:12px;">${refDots}<span style="font-size:11px;color:#aaa;margin-left:auto;display:flex;align-items:center;gap:3px;"><i class="ph ph-hand-tap" style="font-size:12px;"></i> tap</span></div>`:''}
     </div>
   </div>`:''}
-
   <div style="margin-bottom:44px;">
-    <div class="sec-title">What happens next</div>
+    <div class="lbl">What happens next</div>
     <div class="nxt">
-      <p style="font-size:15px;color:rgba(255,255,255,.72);line-height:1.75;margin-bottom:20px;">${data.next_step||''}</p>
+      <p style="font-size:15px;color:#444;line-height:1.75;margin-bottom:20px;">${data.next_step||''}</p>
       <a href="mailto:${contact.email}?subject=Re: valantic for ${input.company}&body=Hi ${contact.name.split(' ')[0]}," class="cta">
         <i class="ph ph-calendar-check" style="font-size:16px;"></i> ${data.cta_label||'Book 30 minutes'}
       </a>
-      <div style="font-size:11px;color:rgba(255,255,255,.25);margin-top:10px;">No deck. No pitch. Just a conversation.</div>
+      <div style="font-size:11px;color:#bbb;margin-top:10px;">No deck. No pitch. Just a conversation.</div>
     </div>
   </div>
-
   <div class="ct">
     ${avatar}
     <div>
-      <div style="font-size:14px;font-weight:700;color:white;">${contact.name}</div>
-      <div style="font-size:12px;color:rgba(255,255,255,.4);margin-bottom:3px;">${contact.role}</div>
+      <div style="font-size:14px;font-weight:700;color:#100c2a;">${contact.name}</div>
+      <div style="font-size:12px;color:#aaa;margin-bottom:3px;">${contact.role}</div>
       <a href="mailto:${contact.email}" style="font-size:12px;color:#ff4b4b;font-weight:600;text-decoration:none;">${contact.email}</a>
     </div>
   </div>
+</div>
 </div>
 
 <footer>${LOGO_W}<span style="font-size:12px;color:rgba(255,255,255,.25);">valantic.ai</span></footer>
