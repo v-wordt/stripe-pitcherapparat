@@ -13,12 +13,12 @@
 | CNAME: valantic.ai → valantic-pitch-api.vercel.app | Jenny | ⏳ |
 | Add domain in Vercel Dashboard → Settings → Domains | Jenny | ⏳ |
 | Services JSON dump → structured into `generate.js` | Maike → Jonas | ⏳ |
-| Reference database via MCP endpoint in `generate.js` | Jonas | ⏳ |
-| Fallback to hardcoded seed data if MCP down | Jonas | ⏳ |
-| Test tracking end-to-end (generate → open → check /api/stats) | Jonas | ⏳ |
-| Redirect `/` → `/valantic-pitch-generator.html` in vercel.json | Jonas | ⏳ |
+| Reference database via MCP endpoint in `generate.js` | Jonas/ Tim | ⏳ |
+| Fallback to hardcoded seed data if MCP down | Jonas / Tim | ⏳ |
+| Test tracking end-to-end (generate → open → check /api/stats) | Maike | ⏳ |
+| Redirect `/` → `/valantic-pitch-generator.html` in vercel.json | Jonas / Tim | ⏳ |
 | QR code for demo | Maike | ⏳ |
-| Azure migration (compliance?) | Jonas / Tim | ❓ POST-DEMO |
+| Azure migration (compliance?) | Jonas / Tim | ❓  |
 
 ---
 
