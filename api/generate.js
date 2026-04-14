@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { put } from '@vercel/blob';
+import { put, list } from '@vercel/blob';
 import { v4 as uuidv4 } from 'uuid';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -184,9 +184,63 @@ document.querySelectorAll('.sr').forEach(el=>obs.observe(el));
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin','*');
-  res.setHeader('Access-Control-Allow-Methods','POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods','POST,GET,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers','Content-Type,x-valantic-secret');
   if(req.method==='OPTIONS') return res.status(200).end();
+
+  const path = req.url || '';
+
+  // ── GET /api/stats — public, no auth needed ───────────────────────────
+  if(req.method==='GET' && path.includes('/stats')) {
+    try {
+      const { blobs } = await list({ prefix: 'index/', limit: 1000 });
+      const entries = await Promise.all(
+        blobs.map(async b => {
+          try {
+            const r = await fetch(b.url);
+            return await r.json();
+          } catch { return null; }
+        })
+      );
+      const valid = entries.filter(Boolean);
+      const opens = valid.filter(e => e.opens > 0).length;
+      const senders = [...new Set(valid.map(e => e.sender).filter(Boolean))];
+      return res.status(200).json({
+        total: valid.length,
+        opened: opens,
+        senders: senders.length,
+        recent: valid.slice(-5).reverse().map(e => ({
+          name: e.name, company: e.company, sender: e.sender, created: e.created, opens: e.opens||0
+        }))
+      });
+    } catch(err) {
+      return res.status(500).json({error: err.message});
+    }
+  }
+
+  // ── GET /api/open/[slug] — tracking pixel ─────────────────────────────
+  if(req.method==='GET' && path.includes('/open/')) {
+    const slug = path.split('/open/')[1]?.replace('.gif','').replace('.png','');
+    if(slug) {
+      try {
+        const indexUrl = `https://valantic-pitch-api.vercel.app/api/blob-read?key=index/${slug}.json`;
+        const r = await fetch(`https://${process.env.BLOB_BASE_URL || 'public.blob.vercel-storage.com'}/index/${slug}.json`).catch(()=>null);
+        if(r && r.ok) {
+          const data = await r.json();
+          data.opens = (data.opens || 0) + 1;
+          data.lastOpened = new Date().toISOString();
+          await put(`index/${slug}.json`, JSON.stringify(data), {access:'public',contentType:'application/json',addRandomSuffix:false});
+        }
+      } catch(e) { /* silent — tracking should never break the page */ }
+    }
+    // Return 1x1 transparent GIF
+    const gif = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7','base64');
+    res.setHeader('Content-Type','image/gif');
+    res.setHeader('Cache-Control','no-store,no-cache');
+    return res.status(200).end(gif);
+  }
+
+  // ── POST /api/generate ────────────────────────────────────────────────
   if(req.method!=='POST') return res.status(405).json({error:'Method not allowed'});
   if(req.headers['x-valantic-secret']!==SHARED_SECRET) return res.status(401).json({error:'Unauthorized'});
   const {name,company,role,context,contact}=req.body||{};
@@ -197,10 +251,20 @@ export default async function handler(req, res) {
     const text=msg.content.map(b=>b.text||'').join('');
     const story=JSON.parse(text.replace(/^```json\s*/i,'').replace(/```\s*$/i,'').trim());
     const html=buildHTML(story,{name,company,role},contactInfo);
+    const trackingPixel = `<img src="https://valantic-pitch-api.vercel.app/api/open/${slug}" width="1" height="1" style="position:absolute;opacity:0;pointer-events:none;" alt="">`;
+    const htmlWithTracking = html.replace('</body>', trackingPixel + '</body>');
     const prefix=`${name.split(' ')[0].toLowerCase()}-${company.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')}`;
     const slug=`${prefix}-${uuidv4().slice(0,8)}`;
-    const blob=await put(`pitches/${slug}.html`,html,{access:'public',contentType:'text/html; charset=utf-8',addRandomSuffix:false});
-    await put(`index/${slug}.json`,JSON.stringify({slug,name,company,created:new Date().toISOString(),url:blob.url}),{access:'public',contentType:'application/json',addRandomSuffix:false});
+    const blob=await put(`pitches/${slug}.html`,htmlWithTracking,{access:'public',contentType:'text/html; charset=utf-8',addRandomSuffix:false});
+    await put(`index/${slug}.json`,JSON.stringify({
+      slug, name, company, role,
+      sender: contactInfo.name,
+      senderEmail: contactInfo.email,
+      created: new Date().toISOString(),
+      opens: 0,
+      lastOpened: null,
+      url: blob.url
+    }),{access:'public',contentType:'application/json',addRandomSuffix:false});
     return res.status(200).json({url:blob.url,slug,story});
   } catch(err){
     return res.status(500).json({error:err.message});
