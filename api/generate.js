@@ -68,9 +68,6 @@ async function fetchMCPServices(company, industry, role) {
 }
 
 
-2-3 approaches. 2-3 references. First reference most impactful.`;
-}
-
 // ── INTELLIGENCE ──────────────────────────────────────────────────────────
 // valantic AI Services & References Intelligence
 // Full portfolio — for generate.js: const INTELLIGENCE = {...}
@@ -207,17 +204,17 @@ function buildPrompt(name, role, company, context, mcpServices = null) {
     `- ${r.client} (${r.industry}): ${r.metric} — ${r.description}`
   ).join('\n');
 
-  return \`You are a world-class B2B sales strategist at valantic.
+  return `You are a world-class B2B sales strategist at valantic.
 Create a personalised value story. Approaches = future (what we WOULD do). References = past proof. Keep them completely separate.
 
-## Contact: \${name}, \${role||'not specified'}, \${company}
-## Context: \${context||'not specified'}
+## Contact: ${name}, ${role||'not specified'}, ${company}
+## Context: ${context||'not specified'}
 
 ## valantic AI Services available for this prospect (choose the 2-3 most relevant):
-\${servicesStr}
+${servicesStr}
 
 ## valantic References (choose the 2-3 most relevant to this industry/role):
-\${refsStr}
+${refsStr}
 
 RULES:
 - greeting: Include urgency signal (competitor moving, window closing). Max 15 words.
@@ -236,7 +233,7 @@ Respond ONLY with valid JSON:
   "next_step": "2-3 sentences.",
   "cta_label": "4-6 words"
 }
-2-3 approaches. 2-3 references.\`;
+2-3 approaches. 2-3 references.`;
 }
 
 function buildHTML(data, input, contact) {
