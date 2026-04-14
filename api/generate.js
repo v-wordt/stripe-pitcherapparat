@@ -250,11 +250,11 @@ export default async function handler(req, res) {
     const msg=await client.messages.create({model:'claude-sonnet-4-5',max_tokens:1500,messages:[{role:'user',content:buildPrompt(name,role,company,context)}]});
     const text=msg.content.map(b=>b.text||'').join('');
     const story=JSON.parse(text.replace(/^```json\s*/i,'').replace(/```\s*$/i,'').trim());
+    const prefix=`${name.split(' ')[0].toLowerCase()}-${company.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')}`;
+    const slug=`${prefix}-${uuidv4().slice(0,8)}`;
     const html=buildHTML(story,{name,company,role},contactInfo);
     const trackingPixel = `<img src="https://valantic-pitch-api.vercel.app/api/open/${slug}" width="1" height="1" style="position:absolute;opacity:0;pointer-events:none;" alt="">`;
     const htmlWithTracking = html.replace('</body>', trackingPixel + '</body>');
-    const prefix=`${name.split(' ')[0].toLowerCase()}-${company.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')}`;
-    const slug=`${prefix}-${uuidv4().slice(0,8)}`;
     const blob=await put(`pitches/${slug}.html`,htmlWithTracking,{access:'public',contentType:'text/html; charset=utf-8',addRandomSuffix:false});
     await put(`index/${slug}.json`,JSON.stringify({
       slug, name, company, role,
