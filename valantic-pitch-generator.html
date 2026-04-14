@@ -1,0 +1,1613 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>valantic.ai | Pitch Generator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@phosphor-icons/web@2.1.2"></script>
+  <style>
+    :root {
+      --val-coral: #ff4b4b;
+      --val-peach: #ff744f;
+      --val-gradient: linear-gradient(135deg, #ff4b4b, #ff744f);
+      --val-black: #100c2a;
+      --val-white: #ffffff;
+      --val-indigo: #193773;
+      --val-blue: #1a4fd6;
+      --val-purple: #5b26b7;
+      --val-gold: #c0aa81;
+      --val-silver: #cdcdcd;
+      --sp-1: 8px; --sp-2: 16px; --sp-3: 24px; --sp-4: 32px;
+      --sp-6: 48px; --sp-8: 64px; --sp-10: 80px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Maven Pro', sans-serif;
+      font-size: 17px;
+      font-weight: 400;
+      line-height: 1.5;
+      background: var(--val-black);
+      color: var(--val-white);
+      min-height: 100vh;
+    }
+
+    /* ── INPUT SCREEN ── */
+    #input-screen {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      background: var(--val-black);
+      padding: var(--sp-8) var(--sp-6) var(--sp-6);
+    }
+
+    .hero-shape {
+      position: absolute;
+      top: -15%;
+      right: -12%;
+      height: 110%;
+      pointer-events: none;
+      opacity: 0.7;
+      mix-blend-mode: screen;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      max-width: 700px;
+    }
+
+    .logo-wrap {
+      margin-bottom: var(--sp-6);
+    }
+
+    .eyebrow {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--val-peach);
+      display: block;
+      margin-bottom: var(--sp-2);
+    }
+
+    .hero h1 {
+      font-size: clamp(32px, 5vw, 52px);
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: var(--sp-3);
+      background: var(--val-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      font-size: 18px;
+      color: rgba(255,255,255,0.72);
+      max-width: 520px;
+    }
+
+    /* ── FORM ── */
+    .form-section {
+      background: rgba(255,255,255,0.03);
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding: var(--sp-6);
+      flex: 1;
+      position: relative;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--sp-3);
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-1);
+    }
+
+    .form-group.full { grid-column: 1 / -1; }
+
+    label {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+    }
+
+    input, textarea, select {
+      font-family: 'Maven Pro', sans-serif;
+      font-size: 16px;
+      background: rgba(255,255,255,0.06);
+      border: 1.5px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      padding: 12px 16px;
+      color: var(--val-white);
+      outline: none;
+      transition: border-color 0.2s;
+      width: 100%;
+    }
+
+    input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.3); }
+
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--val-coral);
+      background: rgba(255,255,255,0.08);
+    }
+
+    select option { background: var(--val-black); color: var(--val-white); }
+
+    textarea { resize: vertical; min-height: 120px; }
+
+    .generate-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--sp-1);
+      padding: 16px 32px;
+      background: var(--val-gradient);
+      color: var(--val-white);
+      font-family: 'Maven Pro', sans-serif;
+      font-weight: 700;
+      font-size: 16px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-top: var(--sp-4);
+      transition: opacity 0.2s, transform 0.1s;
+      width: 100%;
+      justify-content: center;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+      display: flex;
+    }
+
+    .generate-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .generate-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .seed-note {
+      text-align: center;
+      font-size: 13px;
+      color: rgba(255,255,255,0.3);
+      margin-top: var(--sp-2);
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* ── LOADING ── */
+    #loading-screen {
+      display: none;
+      min-height: 100vh;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: var(--sp-3);
+      background: var(--val-black);
+    }
+
+    .loading-ring {
+      width: 56px;
+      height: 56px;
+      border: 3px solid rgba(255,255,255,0.1);
+      border-top-color: var(--val-coral);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    .loading-text {
+      font-size: 16px;
+      color: rgba(255,255,255,0.6);
+    }
+
+    .loading-sub {
+      font-size: 13px;
+      color: rgba(255,255,255,0.3);
+    }
+
+    /* ── EDIT PANEL ── */
+    .edit-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 199; display: none;
+      backdrop-filter: blur(3px);
+    }
+    .edit-backdrop.open { display: block; }
+
+    .edit-panel {
+      position: fixed;
+      top: 0; right: -500px;
+      width: min(460px, 100vw);
+      height: 100vh;
+      background: #0d0b20;
+      border-left: 1px solid rgba(255,255,255,0.07);
+      z-index: 200;
+      overflow-y: auto;
+      transition: right 0.28s cubic-bezier(.4,0,.2,1);
+      display: flex; flex-direction: column;
+    }
+    .edit-panel.open { right: 0; }
+
+    .ep-header {
+      padding: 18px 22px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      display: flex; justify-content: space-between; align-items: center;
+      position: sticky; top: 0; background: #0d0b20; z-index: 1;
+    }
+    .ep-title { font-size: 13px; font-weight: 700; color: var(--val-white); letter-spacing: .06em; text-transform: uppercase; }
+    .ep-close { background: none; border: none; color: rgba(255,255,255,0.35); cursor: pointer; font-size: 22px; line-height: 1; padding: 2px; font-family: sans-serif; }
+    .ep-close:hover { color: white; }
+
+    .ep-body { padding: 20px 22px; display: flex; flex-direction: column; gap: 18px; flex: 1; }
+
+    .ep-field label {
+      font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase;
+      color: rgba(255,255,255,0.35); display: block; margin-bottom: 5px;
+    }
+    .ep-field textarea, .ep-field input {
+      font-family: 'Maven Pro', sans-serif; font-size: 14px; line-height: 1.6;
+      background: rgba(255,255,255,0.05); border: 1.5px solid rgba(255,255,255,0.09);
+      border-radius: 8px; padding: 9px 12px; color: var(--val-white); width: 100%;
+      resize: vertical; outline: none;
+    }
+    .ep-field textarea:focus, .ep-field input:focus { border-color: var(--val-coral); }
+    .ep-field textarea { min-height: 72px; }
+    .ep-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 2px 0; }
+
+    .ep-footer {
+      padding: 16px 22px; border-top: 1px solid rgba(255,255,255,0.07);
+      display: flex; gap: 10px; position: sticky; bottom: 0; background: #0d0b20;
+    }
+    .ep-save {
+      flex: 1; padding: 12px; background: var(--val-gradient); color: white;
+      font-family: 'Maven Pro', sans-serif; font-weight: 700; font-size: 14px;
+      border: none; border-radius: 8px; cursor: pointer;
+    }
+    .ep-suggestion {
+      font-family: 'Maven Pro', sans-serif;
+      font-size: 12px; font-weight: 600;
+      padding: 5px 12px; border-radius: 99px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.5); cursor: pointer;
+      transition: all 0.15s;
+    }
+    .ep-suggestion:hover { border-color: var(--val-coral); color: var(--val-coral); }
+      padding: 12px 18px; background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.5);
+      font-family: 'Maven Pro', sans-serif; font-weight: 600; font-size: 14px;
+      border: none; border-radius: 8px; cursor: pointer;
+    }
+
+    /* ── REFERENCE STACK ── */
+    .ref-stack-wrap {
+      margin-bottom: 56px; position: relative;
+    }
+    .ref-stack {
+      position: relative; cursor: pointer;
+    }
+    .ref-card-shadow {
+      position: absolute; left: 8px; right: 8px; bottom: -6px; height: 100%;
+      background: rgba(16,12,42,0.55); border-radius: 16px; transform: scale(0.97);
+    }
+    .ref-card-shadow-2 {
+      position: absolute; left: 14px; right: 14px; bottom: -12px; height: 100%;
+      background: rgba(16,12,42,0.3); border-radius: 16px; transform: scale(0.94);
+    }
+    .ref-card-front {
+      background: var(--val-black); border-radius: 16px;
+      padding: var(--sp-6); position: relative; overflow: hidden;
+      transition: transform 0.15s;
+    }
+    .ref-stack:hover .ref-card-front { transform: translateY(-3px); }
+
+    .ref-dots {
+      display: flex; gap: 6px; margin-top: 16px; align-items: center;
+    }
+    .ref-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: rgba(0,0,0,0.15); transition: all 0.2s;
+    }
+    .ref-dot.active { background: var(--val-coral); width: 16px; border-radius: 3px; }
+    .ref-hint {
+      font-size: 11px; color: rgba(0,0,0,0.3); margin-left: auto;
+      display: flex; align-items: center; gap: 4px;
+    }
+
+    /* ── PUBLISH BUTTON ── */
+    .publish-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 14px; font-family: 'Maven Pro', sans-serif;
+      font-weight: 700; font-size: 12px; border-radius: 7px; cursor: pointer;
+      border: 1.5px solid rgba(255,255,255,0.15); background: none;
+      color: rgba(255,255,255,0.5); transition: all 0.2s; letter-spacing: .03em;
+    }
+    .publish-btn:hover { border-color: var(--val-coral); color: var(--val-coral); }
+    .publish-btn.sent { background: var(--val-gradient); border-color: transparent; color: white; }
+
+    /* ── OUTPUT PAGE ── */
+    #output-screen {
+      display: none;
+      background: #f5f3f0;
+      min-height: 100vh;
+    }
+
+    /* Top bar */
+    .out-topbar {
+      background: var(--val-black);
+      padding: 14px var(--sp-6);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .back-btn {
+      font-family: 'Maven Pro', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.45);
+      background: none;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.2s;
+    }
+    .back-btn:hover { color: var(--val-white); }
+
+    /* Hero — dark, full bleed, editorial */
+    .out-hero {
+      position: relative;
+      overflow: hidden;
+      background: var(--val-black);
+      padding: 72px var(--sp-6) 80px;
+    }
+
+    .out-hero-shape {
+      position: absolute;
+      top: -20%;
+      right: -8%;
+      height: 130%;
+      pointer-events: none;
+      opacity: 0.55;
+      mix-blend-mode: screen;
+    }
+
+    .out-for {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--val-peach);
+      margin-bottom: var(--sp-3);
+    }
+
+    .out-hero h1 {
+      font-size: clamp(30px, 4.5vw, 52px);
+      font-weight: 700;
+      line-height: 1.1;
+      color: var(--val-white);
+      max-width: 720px;
+      margin-bottom: var(--sp-3);
+    }
+
+    .out-hero h1 em {
+      font-style: normal;
+      background: var(--val-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .out-tagline {
+      font-size: 18px;
+      color: rgba(255,255,255,0.6);
+      max-width: 560px;
+      line-height: 1.65;
+    }
+
+    /* Body — the "memo" */
+    .out-body {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 64px var(--sp-6) 80px;
+    }
+
+    /* Context block — feels like a letter */
+    .out-context {
+      margin-bottom: 56px;
+    }
+
+    .out-eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--val-coral);
+      margin-bottom: var(--sp-2);
+    }
+
+    .out-context p {
+      font-size: 19px;
+      line-height: 1.75;
+      color: #2a2a2a;
+      font-weight: 400;
+    }
+
+    /* Perspective — valantic's POV, slightly different style */
+    .out-perspective {
+      background: var(--val-white);
+      border-left: 3px solid var(--val-coral);
+      padding: var(--sp-4) var(--sp-4);
+      border-radius: 0 12px 12px 0;
+      margin-bottom: 56px;
+    }
+
+    .out-perspective p {
+      font-size: 17px;
+      line-height: 1.75;
+      color: #333;
+      margin: 0;
+    }
+
+    /* Approaches — 2-3 things, inline, not cards */
+    .out-approaches {
+      margin-bottom: 56px;
+    }
+
+    .out-approach {
+      display: flex;
+      gap: var(--sp-4);
+      padding: var(--sp-3) 0;
+      border-bottom: 1px solid rgba(0,0,0,0.07);
+    }
+    .out-approach:last-child { border-bottom: none; }
+
+    .out-approach-num {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      color: var(--val-coral);
+      padding-top: 3px;
+      min-width: 24px;
+    }
+
+    .out-approach-body h4 {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--val-black);
+      margin-bottom: 4px;
+    }
+
+    .out-approach-body p {
+      font-size: 16px;
+      color: #555;
+      line-height: 1.65;
+      margin: 0 0 6px;
+    }
+
+    .out-approach-proof {
+      font-size: 13px;
+      font-weight: 600;
+      color: #999;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* The one result — big, quiet */
+    .out-result {
+      background: var(--val-black);
+      border-radius: 16px;
+      padding: var(--sp-6);
+      margin-bottom: 56px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .out-result-shape {
+      position: absolute;
+      right: -10%;
+      top: -20%;
+      height: 140%;
+      opacity: 0.3;
+      mix-blend-mode: screen;
+      pointer-events: none;
+    }
+
+    .out-result-number {
+      font-size: 72px;
+      font-weight: 700;
+      line-height: 1;
+      background: var(--val-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+
+    .out-result-desc {
+      font-size: 17px;
+      color: rgba(255,255,255,0.75);
+      max-width: 480px;
+      line-height: 1.6;
+      position: relative;
+      z-index: 1;
+    }
+
+    .out-result-company {
+      font-size: 12px;
+      color: rgba(255,255,255,0.3);
+      margin-top: 8px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Next step — concrete proposal */
+    .out-nextstep {
+      background: var(--val-white);
+      border-radius: 16px;
+      padding: var(--sp-4) var(--sp-4);
+      margin-bottom: 56px;
+      border: 1.5px solid #e8e5f0;
+    }
+
+    .out-nextstep h3 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--val-black);
+      margin-bottom: var(--sp-2);
+    }
+
+    .out-nextstep p {
+      font-size: 16px;
+      color: #555;
+      line-height: 1.7;
+      margin-bottom: var(--sp-3);
+    }
+
+    .out-cta-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 13px 24px;
+      background: var(--val-gradient);
+      color: var(--val-white);
+      font-family: 'Maven Pro', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      border-radius: 9px;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+    }
+
+    /* Contact — human */
+    .out-contact {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-3);
+      padding-top: var(--sp-4);
+      border-top: 1px solid rgba(0,0,0,0.08);
+    }
+
+    .out-avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--val-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 700;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .out-contact-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--val-black);
+    }
+
+    .out-contact-role {
+      font-size: 13px;
+      color: #888;
+      margin-bottom: 4px;
+    }
+
+    .out-contact-mail {
+      font-size: 13px;
+      color: var(--val-coral);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    /* Footer */
+    .out-footer {
+      text-align: center;
+      padding: var(--sp-6);
+      background: var(--val-black);
+    }
+
+    .out-footer-note {
+      font-size: 12px;
+      color: rgba(255,255,255,0.2);
+      margin-top: var(--sp-2);
+    }
+
+    @media (max-width: 640px) {
+      .out-hero, .out-body { padding-left: var(--sp-3); padding-right: var(--sp-3); }
+      .out-topbar { padding-left: var(--sp-3); padding-right: var(--sp-3); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     INPUT SCREEN
+══════════════════════════════════════════ -->
+<div id="input-screen">
+
+  <div class="hero">
+    <!-- Shape -->
+    <div class="hero-shape">
+      <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1015.91 1154.31" style="height:100%;width:auto;">
+        <defs>
+          <linearGradient id="grad1" gradientUnits="userSpaceOnUse" x1="0" y1="577" x2="1016" y2="577">
+            <stop offset="0" style="stop-color:#FF4B4B"/>
+            <stop offset="1" style="stop-color:#FF744F"/>
+          </linearGradient>
+        </defs>
+        <path fill="url(#grad1)" d="M812.3,47.5C694.8-31.8,530.7,12.9,415.6,89.7C300.5,166.5,185.4,276.2,113.2,408.8
+          C41,541.4,11.7,697.8,47.6,840.1c35.9,142.3,136.9,270.4,266.7,316.2c129.8,45.8,288.3-0.6,407.4-82.1
+          c119.1-81.5,199-197.8,264.9-318.7c65.9-120.9,117.8-246.4,121.9-374.2C1112.6,253.5,1059.3,156.1,975,99.5
+          C933.8,71.3,875.2,53.8,812.3,47.5z"/>
+      </svg>
+    </div>
+
+    <div class="hero-content">
+      <div class="logo-wrap">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="232 216 1500 325" style="height:28px;width:auto;">
+          <path fill="#FFFFFF" d="M1678,456.2c-7.8,14.8-24.3,23.9-43.6,23.9c-30,0-51.8-22.4-51.8-53.2s21.8-53.2,51.8-53.2c19.2,0,35.3,8.9,43.6,23.9l54-31.4c-19.3-33.1-56.2-53.6-96.8-53.6c-65.4,0-114.7,49.1-114.7,114.2S1569.8,541,1635.2,541c40.6,0,77.5-20.6,96.8-54L1678,456.2z"/>
+          <rect fill="#FFFFFF" x="1439" y="318.8" width="62" height="216.2"/>
+          <path fill="#FFFFFF" d="M1470,216.1c-20.4,0-37.6,17.2-37.6,37.6s17.2,37.6,37.6,37.6s37.6-17.2,37.6-37.6S1490.4,216.1,1470,216.1z"/>
+          <path fill="#FFFFFF" d="M1331.8,519.9c16.2,14.6,44.1,19.5,87.8,15.2v-55.9c-19.9,1.1-32.8,0.3-39.9-6.3c-3.7-3.5-5.5-8.3-5.5-14.8v-80h45.4v-59.4h-45.4v-75.9l-62,18.6v57.3H1277V378h35.2v80C1312.2,488.2,1318.4,507.8,1331.8,519.9z"/>
+          <path fill="#FFFFFF" d="M1163.4,374.6c23,0,41.7,18.7,41.7,41.7v118.6h62V402.1c0-49.4-40-89.5-89.4-89.5c-18.9,0-37.4,6-52.7,17.2l-3.3,2.4v-13.4h-62V535h62V416.3C1121.8,393.3,1140.4,374.6,1163.4,374.6z"/>
+          <path fill="#FFFFFF" d="M1029.2,534.9V318.8h-62v24.1l-3.6-4.1c-15-17.4-36.6-26.2-64.1-26.2c-27.5,0-53.4,11.7-72.8,32.9c-19.7,21.5-30.5,50.4-30.5,81.4s10.8,59.9,30.5,81.4c19.4,21.2,45.2,32.9,72.8,32.9c27.6,0,49-8.8,64.1-26.2l3.6-4.1V535L1029.2,534.9z M912.8,482.6c-32.6,0-54.5-22.4-54.5-55.8s21.9-55.8,54.5-55.8c32.6,0,54.5,22.4,54.5,55.8S945.3,482.6,912.8,482.6z"/>
+          <polygon fill="#FFFFFF" points="714.8,234.7 714.8,534.9 776.8,534.9 776.8,216.1"/>
+          <path fill="#FFFFFF" d="M684.3,534.9V318.8h-62v24.1l-3.6-4.1c-15.1-17.4-36.6-26.2-64.1-26.2c-27.5,0-53.4,11.7-72.8,32.9c-19.6,21.5-30.5,50.4-30.5,81.4s10.8,59.9,30.5,81.4c19.4,21.2,45.2,32.9,72.8,32.9c27.5,0,49-8.8,64.1-26.2l3.6-4.1V535L684.3,534.9z M567.8,482.6c-32.6,0-54.5-22.4-54.5-55.8s21.9-55.8,54.5-55.8c32.6,0,54.5,22.4,54.5,55.8S600.4,482.6,567.8,482.6z"/>
+          <polygon fill="#FFFFFF" points="395.3,318.8 348,463 300.7,318.8 232,318.8 312,534.9 384,534.9 464,318.8"/>
+        </svg>
+      </div>
+
+      <span class="eyebrow">Intelligence Layer · Demo</span>
+      <h1>Your client.<br>Our answer.</h1>
+      <p>Enter a person and their context — get a personalised valantic value story in seconds.</p>
+      <div id="stats-bar" style="margin-top:14px;font-size:12px;color:rgba(255,255,255,.35);display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <span id="stats-count" style="display:flex;align-items:center;gap:5px;"><span style="width:6px;height:6px;border-radius:50%;background:#ff4b4b;display:inline-block;animation:pulse 2s infinite;"></span>Loading…</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-section">
+
+    <!-- Header with profile in corner -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-3);">
+      <span class="eyebrow" style="font-size:11px;">Client</span>
+      <!-- Profile pill -->
+      <div style="position:relative;">
+        <button onclick="toggleProfile()" id="profile-toggle" style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:99px;padding:7px 16px 7px 8px;cursor:pointer;font-family:'Maven Pro',sans-serif;">
+          <div id="profile-avatar-display" style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#ff4b4b,#ff744f);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:white;flex-shrink:0;overflow:hidden;">MS</div>
+          <div id="profile-name-display" style="font-size:14px;font-weight:600;color:rgba(255,255,255,0.8);">Maike Saager</div>
+          <i class="ph ph-pencil-simple" style="font-size:13px;color:rgba(255,255,255,0.4);"></i>
+        </button>
+        <!-- Dropdown -->
+        <div id="profile-edit" style="display:none;position:absolute;top:calc(100% + 8px);right:0;width:320px;background:#0d0b20;border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:var(--sp-3);z-index:100;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <span style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.4);">My Profile</span>
+            <button onclick="toggleProfile()" style="background:none;border:none;color:rgba(255,255,255,0.4);cursor:pointer;font-size:20px;line-height:1;padding:0;">×</button>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div class="form-group"><label>Your Name</label><input type="text" id="my-name" placeholder="Maike Saager" /></div>
+            <div class="form-group"><label>Your Role</label><input type="text" id="my-role" placeholder="Head of Growth Platform AI Hub" /></div>
+            <div class="form-group"><label>Your Email</label><input type="text" id="my-email" placeholder="maike.saager@valantic.com" /></div>
+            <div class="form-group"><label>Photo URL <span style="font-weight:400;opacity:.5;">(e.g. from LinkedIn)</span></label><input type="text" id="my-photo" placeholder="https://media.linkedin.com/..." /></div>
+          </div>
+          <button onclick="saveProfile()" style="margin-top:12px;font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:700;padding:9px 16px;background:var(--val-gradient);color:white;border:none;border-radius:8px;cursor:pointer;width:100%;">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Client fields -->
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Name</label>
+        <input type="text" id="contact-name" placeholder="e.g. Stefan Müller" />
+      </div>
+      <div class="form-group">
+        <label>Company</label>
+        <input type="text" id="contact-company" placeholder="e.g. REWE Group" />
+      </div>
+      <div class="form-group full">
+        <label>Role</label>
+        <input type="text" id="contact-role" placeholder="e.g. CIO, CDO, Head of Operations" />
+      </div>
+      <div class="form-group full">
+        <label>What's going on with them?</label>
+        <textarea id="contact-context" placeholder="Who are they, what's their situation, what's keeping them up at night — anything you know. The more specific, the better the story."></textarea>
+      </div>
+    </div>
+
+    <button class="generate-btn" onclick="generatePitch()">
+      <i class="ph ph-sparkle" style="font-size:20px;"></i>
+      Generate personalised story
+    </button>
+
+    <!-- Version history -->
+    <div id="history-section" style="display:none;margin-top:var(--sp-3);">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:10px;">Recent</div>
+      <div id="history-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+    </div>
+
+    <p class="seed-note">Powered by valantic Intelligence Layer · SAP · CX/UX · AI Hub</p>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════
+     LOADING SCREEN
+══════════════════════════════════════════ -->
+<div id="loading-screen">
+  <div class="loading-ring"></div>
+  <div class="loading-text" id="loading-msg">Intelligence Layer is thinking…</div>
+  <div class="loading-sub">Combining services across 3 CCs</div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     OUTPUT SCREEN
+══════════════════════════════════════════ -->
+<div id="output-screen">
+  <!-- dynamically filled -->
+</div>
+
+
+<script>
+// ── CONFIG — update BACKEND_URL once Vercel is deployed ───────────────────
+const BACKEND_URL = 'https://valantic-pitch-api.vercel.app/api';
+const DEMO_API_KEY = null; // for local testing only: 'sk-ant-...'
+
+// ── PROFILE (localStorage) ────────────────────────────────────────────────
+function loadProfile() {
+  try {
+    const p = JSON.parse(localStorage.getItem('valantic_profile') || '{}');
+    return {
+      name: p.name || 'Maike Saager',
+      role: p.role || 'Head of Growth Platform AI Hub, valantic',
+      email: p.email || 'maike.saager@valantic.com',
+      photo: p.photo || null,
+    };
+  } catch { return {}; }
+}
+
+function saveProfile() {
+  const p = {
+    name: document.getElementById('my-name').value.trim() || 'Maike Saager',
+    role: document.getElementById('my-role').value.trim() || 'Head of Growth Platform AI Hub, valantic',
+    email: document.getElementById('my-email').value.trim() || 'maike.saager@valantic.com',
+    photo: document.getElementById('my-photo').value.trim() || null,
+  };
+  localStorage.setItem('valantic_profile', JSON.stringify(p));
+  renderProfileDisplay(p);
+  toggleProfile();
+}
+
+function renderProfileDisplay(p) {
+  const initials = (p.name || 'VS').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+  const nameEl = document.getElementById('profile-name-display');
+  if (nameEl) nameEl.textContent = p.name || 'Maike Saager';
+  const av = document.getElementById('profile-avatar-display');
+  if (av) {
+    if (p.photo) {
+      av.style.background = 'none';
+      av.innerHTML = `<img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+    } else {
+      av.style.background = 'linear-gradient(135deg,#ff4b4b,#ff744f)';
+      av.innerHTML = initials;
+    }
+  }
+}
+
+function toggleProfile() {
+  const edit = document.getElementById('profile-edit');
+  if (!edit) return;
+  const isOpen = edit.style.display !== 'none';
+  if (!isOpen) {
+    const p = loadProfile();
+    document.getElementById('my-name').value = p.name || '';
+    document.getElementById('my-role').value = p.role || '';
+    document.getElementById('my-email').value = p.email || '';
+    document.getElementById('my-photo').value = p.photo || '';
+    edit.style.display = 'block';
+  } else {
+    edit.style.display = 'none';
+  }
+}
+
+// ── HISTORY (localStorage, last 5) ───────────────────────────────────────
+function saveToHistory(entry) {
+  try {
+    const h = JSON.parse(localStorage.getItem('valantic_history') || '[]');
+    h.unshift({ ...entry, saved: new Date().toISOString() });
+    localStorage.setItem('valantic_history', JSON.stringify(h.slice(0, 5)));
+    renderHistory();
+  } catch {}
+}
+
+function renderHistory() {
+  try {
+    const h = JSON.parse(localStorage.getItem('valantic_history') || '[]');
+    const section = document.getElementById('history-section');
+    const list = document.getElementById('history-list');
+    if (!h.length) { section.style.display = 'none'; return; }
+    section.style.display = 'block';
+    list.innerHTML = h.map((item, i) => `
+      <button onclick="loadFromHistory(${i})" style="font-family:'Maven Pro',sans-serif;width:100%;text-align:left;padding:8px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;cursor:pointer;color:rgba(255,255,255,0.7);font-size:13px;display:flex;justify-content:space-between;align-items:center;">
+        <span><strong>${item.name}</strong> · ${item.company}</span>
+        <span style="color:rgba(255,255,255,0.3);font-size:11px;">${new Date(item.saved).toLocaleDateString()}</span>
+      </button>`).join('');
+  } catch {}
+}
+
+function loadFromHistory(i) {
+  try {
+    const h = JSON.parse(localStorage.getItem('valantic_history') || '[]');
+    const item = h[i];
+    if (!item) return;
+    document.getElementById('contact-name').value = item.name || '';
+    document.getElementById('contact-company').value = item.company || '';
+    document.getElementById('contact-role').value = item.role || '';
+    document.getElementById('contact-context').value = item.context || '';
+    if (item.data) {
+      renderOutput(item.data, { name: item.name, company: item.company, role: item.role });
+    }
+  } catch {}
+}
+
+// ── GENERATE ──────────────────────────────────────────────────────────────
+async function generatePitch() {
+  const name = document.getElementById('contact-name').value.trim();
+  const role = document.getElementById('contact-role').value.trim();
+  const company = document.getElementById('contact-company').value.trim();
+  const context = document.getElementById('contact-context').value.trim();
+  const profile = loadProfile();
+
+  if (!name || !company) {
+    alert('Please enter at least a name and company.');
+    return;
+  }
+
+  _lastInput = { name, role, company, context };
+  showLoading();
+
+  try {
+    const loadingMsgs = ['Analysing context…','Matching services…','Building value story…','Almost there…'];
+    let msgIdx = 0;
+    const msgInterval = setInterval(() => {
+      msgIdx = (msgIdx + 1) % loadingMsgs.length;
+      document.getElementById('loading-msg').textContent = loadingMsgs[msgIdx];
+    }, 1800);
+
+    let result;
+
+    if (BACKEND_URL) {
+      // ── Backend mode (Vercel) ──
+      const res = await fetch(`${BACKEND_URL}/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-valantic-secret': 'valantic2026',
+        },
+        body: JSON.stringify({ name, role, company, context, contact: profile }),
+      });
+      clearInterval(msgInterval);
+      if (!res.ok) throw new Error(`Backend ${res.status}: ${await res.text()}`);
+      const data = await res.json();
+      result = data.story;
+      if (data.url) _lastPublishedUrl = data.url;
+
+    } else {
+      // ── Demo mode — set your sk-ant-... key here for local testing ──
+      const apiKey = typeof DEMO_API_KEY !== 'undefined' ? DEMO_API_KEY : null;
+      if (!apiKey) {
+        clearInterval(msgInterval);
+        showInput();
+        alert('Backend not yet connected. Coming soon!');
+        return;
+      }
+      const prompt = buildDemoPrompt(name, role, company, context);
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({ model: 'claude-sonnet-4-5', max_tokens: 1500, messages: [{ role: 'user', content: prompt }] }),
+      });
+      clearInterval(msgInterval);
+      if (!response.ok) throw new Error(`API ${response.status}: ${await response.text()}`);
+      const data = await response.json();
+      const text = data.content.map(i => i.text || '').join('');
+      const clean = text.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+      result = JSON.parse(clean);
+    }
+
+    // Save to history
+    saveToHistory({ name, company, role, context, data: result });
+    renderOutput(result, { name, role, company });
+
+  } catch (err) {
+    console.error('Generate error:', err);
+    showInput();
+    alert('Error: ' + (err.message || JSON.stringify(err)));
+  }
+}
+
+let _lastPublishedUrl = null;
+
+function buildDemoPrompt(name, role, company, context) {
+  return `You are a world-class B2B sales strategist at valantic, a leading European digital consulting firm.
+Your task: create a highly personalised value story for a contact.
+
+## Contact
+- Name: ${name}
+- Role: ${role || 'not specified'}
+- Company: ${company}
+- What's going on: ${context || 'not specified'}
+
+## valantic AI Offering
+valantic combines business, data, and technology end-to-end. Technology-agnostic, opinionated. Deep industry expertise.
+
+Building blocks: PLAN (AI Strategy & Value Discovery), BUILD (Data & AI Platform), RUN (AI Solution Delivery & Ops), TRANSFORM (Governance & Adoption).
+
+References: DATEV — 40% faster month-end close; PLM — 23% inventory reduction; Siemens Energy — 60% fewer incidents; HELA — 70% fewer manual bookings; Rewe Digital — NPS +18; Retail client — +34% checkout conversion; Industrial client — €4M AI potential identified; Logistics — document AI in 6 weeks; valantic internal — 400+ vally users NPS 72.
+
+## Task
+Respond ONLY with valid JSON:
+{
+  "headline": "Direct confident headline max 10 words about their situation",
+  "headline_highlight": "1-3 words from headline exact substring",
+  "tagline": "One sentence max 20 words human not corporate",
+  "situation": "3-5 sentences make them think how do they know this specific pressure no buzzwords",
+  "what_we_gain": [{"title":"outcome-first 4-6 words","description":"impact first then how 1-2 sentences","proof":"client + metric"}],
+  "references": [{"number":"metric","description":"1-2 sentences","client":"name or type"}],
+  "next_step": "concrete proposal specific not lets talk 2-3 sentences",
+  "cta_label": "4-6 words action-oriented"
+}
+2-3 what_we_gain items. 2-3 references. First reference most impactful.`;
+}
+
+// ── RENDER OUTPUT ─────────────────────────────────────────────────────────
+let _currentData = null;
+let _currentInput = null;
+let _refIndex = 0;
+
+const LOGO_SVG_WHITE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="232 216 1500 325" style="height:20px;width:auto;"><path fill="#FFFFFF" d="M1678,456.2c-7.8,14.8-24.3,23.9-43.6,23.9c-30,0-51.8-22.4-51.8-53.2s21.8-53.2,51.8-53.2c19.2,0,35.3,8.9,43.6,23.9l54-31.4c-19.3-33.1-56.2-53.6-96.8-53.6c-65.4,0-114.7,49.1-114.7,114.2S1569.8,541,1635.2,541c40.6,0,77.5-20.6,96.8-54L1678,456.2z"/><rect fill="#FFFFFF" x="1439" y="318.8" width="62" height="216.2"/><path fill="#FFFFFF" d="M1470,216.1c-20.4,0-37.6,17.2-37.6,37.6s17.2,37.6,37.6,37.6s37.6-17.2,37.6-37.6S1490.4,216.1,1470,216.1z"/><path fill="#FFFFFF" d="M1331.8,519.9c16.2,14.6,44.1,19.5,87.8,15.2v-55.9c-19.9,1.1-32.8,0.3-39.9-6.3c-3.7-3.5-5.5-8.3-5.5-14.8v-80h45.4v-59.4h-45.4v-75.9l-62,18.6v57.3H1277V378h35.2v80C1312.2,488.2,1318.4,507.8,1331.8,519.9z"/><path fill="#FFFFFF" d="M1163.4,374.6c23,0,41.7,18.7,41.7,41.7v118.6h62V402.1c0-49.4-40-89.5-89.4-89.5c-18.9,0-37.4,6-52.7,17.2l-3.3,2.4v-13.4h-62V535h62V416.3C1121.8,393.3,1140.4,374.6,1163.4,374.6z"/><path fill="#FFFFFF" d="M1029.2,534.9V318.8h-62v24.1l-3.6-4.1c-15-17.4-36.6-26.2-64.1-26.2c-27.5,0-53.4,11.7-72.8,32.9c-19.7,21.5-30.5,50.4-30.5,81.4s10.8,59.9,30.5,81.4c19.4,21.2,45.2,32.9,72.8,32.9c27.6,0,49-8.8,64.1-26.2l3.6-4.1V535L1029.2,534.9z M912.8,482.6c-32.6,0-54.5-22.4-54.5-55.8s21.9-55.8,54.5-55.8c32.6,0,54.5,22.4,54.5,55.8S945.3,482.6,912.8,482.6z"/><polygon fill="#FFFFFF" points="714.8,234.7 714.8,534.9 776.8,534.9 776.8,216.1"/><path fill="#FFFFFF" d="M684.3,534.9V318.8h-62v24.1l-3.6-4.1c-15.1-17.4-36.6-26.2-64.1-26.2c-27.5,0-53.4,11.7-72.8,32.9c-19.6,21.5-30.5,50.4-30.5,81.4s10.8,59.9,30.5,81.4c19.4,21.2,45.2,32.9,72.8,32.9c27.5,0,49-8.8,64.1-26.2l3.6-4.1V535L684.3,534.9z M567.8,482.6c-32.6,0-54.5-22.4-54.5-55.8s21.9-55.8,54.5-55.8c32.6,0,54.5,22.4,54.5,55.8S600.4,482.6,567.8,482.6z"/><polygon fill="#FFFFFF" points="395.3,318.8 348,463 300.7,318.8 232,318.8 312,534.9 384,534.9 464,318.8"/></svg>`;
+
+function renderOutput(data, input) {
+  _currentData = JSON.parse(JSON.stringify(data));
+  _currentInput = input;
+  _refIndex = 0;
+  _rebuildOutput();
+  showOutput();
+}
+
+
+
+
+function _rebuildOutput() {
+  const data = _currentData;
+  const input = _currentInput;
+  const profile = loadProfile();
+  const screen = document.getElementById('output-screen');
+  const firstName = (input.name || '').split(' ')[0];
+
+  const rawGreeting = data.greeting || data.tagline || '';
+  const greetingText = rawGreeting.replace(new RegExp('^' + firstName + '[,.]?\\s*', 'i'), '');
+  const fullHeadline = firstName + ', ' + greetingText;
+
+  const approachCards = (data.approaches || data.what_we_gain || []).map((a, i) => `
+    <div style="background:white;border-radius:16px;padding:28px;box-shadow:0 1px 6px rgba(0,0,0,.06);display:flex;flex-direction:column;gap:0;transition:transform .2s,box-shadow .2s;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,.1)'" onmouseout="this.style.transform='';this.style.boxShadow='0 1px 6px rgba(0,0,0,.06)'">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#ff4b4b;margin-bottom:12px;">0${i+1}</div>
+      <div style="font-size:15px;font-weight:700;color:#100c2a;margin-bottom:10px;line-height:1.35;">${a.title}</div>
+      <div style="font-size:14px;color:#555;line-height:1.7;flex:1;">${a.description}</div>
+      ${(a.outcome||a.proof)?`<div style="font-size:12px;font-weight:600;color:#193773;border-top:1px solid #f0eeee;padding-top:12px;margin-top:12px;">→ ${a.outcome||a.proof}</div>`:''}
+    </div>`).join('');
+
+  const refs = data.references && data.references.length ? data.references
+    : data.big_result ? [data.big_result] : [];
+
+  // Spotlight: one big ref at a time, auto-advances
+  const refSpotlight = refs.length ? `
+    <div style="position:relative;">
+      ${refs.map((r, i) => `
+        <div class="ref-spot" style="display:${i===0?'block':'none'};background:#100c2a;border-radius:20px;padding:52px 56px;position:relative;overflow:hidden;min-height:280px;">
+          <!-- Logo + client row -->
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:28px;">
+            <img src="https://logo.clearbit.com/${(r.client||'').toLowerCase().replace(/[^a-z0-9]/g,'')}.com" style="height:18px;width:auto;opacity:.45;filter:brightness(10);" onerror="this.style.display='none'" alt="">
+            <span style="font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.35);">${r.client}</span>
+          </div>
+          <!-- Big layout: number + text side by side -->
+          <div style="display:grid;grid-template-columns:auto 1fr;gap:48px;align-items:center;">
+            <div style="font-size:clamp(72px,10vw,120px);font-weight:700;line-height:1;color:#ff4b4b;white-space:nowrap;">${r.number}</div>
+            <div style="font-size:17px;color:rgba(255,255,255,.78);line-height:1.7;">${r.description}</div>
+          </div>
+          <!-- Ghost number -->
+          <div style="position:absolute;right:-20px;bottom:-30px;font-size:220px;font-weight:700;color:rgba(255,255,255,.025);line-height:1;pointer-events:none;user-select:none;">${r.number}</div>
+        </div>`).join('')}
+      <!-- Dot nav + counter -->
+      ${refs.length > 1 ? `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;">
+        <div style="display:flex;gap:7px;">
+          ${refs.map((_, i) => `<button class="ref-dot-btn" data-i="${i}" onclick="spotlightGoto(${i})" style="width:${i===0?'24':'8'}px;height:8px;border-radius:4px;border:none;background:${i===0?'#ff4b4b':'#ccc'};cursor:pointer;transition:all .25s;padding:0;"></button>`).join('')}
+        </div>
+        <span id="ref-spot-counter" style="font-size:12px;font-weight:600;color:#aaa;">1 / ${refs.length}</span>
+      </div>` : ''}
+    </div>` : '';
+
+  const avatar = profile.photo
+    ? `<img src="${profile.photo}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;flex-shrink:0;">`
+    : `<div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#ff4b4b,#ff744f);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:white;flex-shrink:0;">${profile.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}</div>`;
+
+  const BLOB = `<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1015.91 1154.31" style="height:100%;width:auto;"><defs><linearGradient id="bg1" gradientUnits="userSpaceOnUse" x1="0" y1="577" x2="1016" y2="577"><stop offset="0" style="stop-color:#FF4B4B"/><stop offset="1" style="stop-color:#FF744F"/></linearGradient></defs><path fill="url(#bg1)" d="M812.3,47.5C694.8-31.8,530.7,12.9,415.6,89.7C300.5,166.5,185.4,276.2,113.2,408.8C41,541.4,11.7,697.8,47.6,840.1c35.9,142.3,136.9,270.4,266.7,316.2c129.8,45.8,288.3-0.6,407.4-82.1c119.1-81.5,199-197.8,264.9-318.7c65.9-120.9,117.8-246.4,121.9-374.2C1112.6,253.5,1059.3,156.1,975,99.5C933.8,71.3,875.2,53.8,812.3,47.5z"/></svg>`;
+
+  screen.innerHTML = `
+    <div class="out-topbar">
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="back-btn" onclick="showInput()"><i class="ph ph-arrow-left"></i> New</button>
+        <button class="back-btn" onclick="showInput(_lastInput)" style="color:rgba(255,255,255,0.6);border:1.5px solid rgba(255,255,255,0.12);border-radius:7px;padding:5px 12px;"><i class="ph ph-arrows-clockwise"></i> Regenerate</button>
+        <button class="back-btn" onclick="openEditPanel()" style="color:rgba(255,255,255,0.6);border:1.5px solid rgba(255,255,255,0.12);border-radius:7px;padding:5px 12px;"><i class="ph ph-pencil-simple"></i> Edit</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        ${LOGO_SVG_WHITE}
+        <button class="publish-btn" id="publish-btn" onclick="markSent()"><i class="ph ph-paper-plane-tilt"></i> Ready to send</button>
+      </div>
+    </div>
+
+    <!-- HERO — typewriter on full headline -->
+    <div style="position:relative;overflow:hidden;background:#100c2a;padding:64px var(--sp-6) 72px;min-height:320px;display:flex;align-items:flex-end;">
+      <div style="position:absolute;top:-15%;right:-10%;height:115%;pointer-events:none;opacity:.9;mix-blend-mode:screen;">${BLOB}</div>
+      <div style="position:relative;z-index:1;max-width:900px;width:100%;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:22px;opacity:0;animation:fadeUp .5s .1s ease forwards;">
+          <span style="font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.35);">${input.name}</span>
+          <span style="width:3px;height:3px;border-radius:50%;background:rgba(255,255,255,.2);"></span>
+          <span style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.35);">${input.company}</span>
+        </div>
+        <div id="tw-container" style="font-size:clamp(28px,4vw,52px);font-weight:700;line-height:1.18;max-width:840px;visibility:hidden;">
+          <span id="tw-out" style="color:white;"></span><span id="tw-name-done" style="background:linear-gradient(135deg,#ff4b4b,#ff744f);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:none;">${firstName},</span><span id="tw-rest-out" style="color:white;display:none;"> ${greetingText}</span><span id="tw-cursor" style="color:#ff4b4b;animation:blink 1s step-end infinite;display:none;">|</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- BODY -->
+    <div style="background:#f5f3f0;">
+      <div style="max-width:1100px;margin:0 auto;padding:52px var(--sp-6) 80px;">
+
+        <div class="scroll-reveal" style="margin-bottom:44px;">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#ff4b4b;margin-bottom:14px;">Your situation</div>
+          <div style="background:white;border-radius:16px;padding:28px 32px;box-shadow:0 1px 6px rgba(0,0,0,.06);">
+            <p style="font-size:16px;line-height:1.85;color:#2a2a2a;">${data.situation||data.context_paragraph||''}</p>
+          </div>
+        </div>
+
+        <div class="scroll-reveal" id="ep-bring-display" style="margin-bottom:44px;">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#ff4b4b;margin-bottom:14px;">What we'd do for ${input.company}</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">${approachCards}</div>
+        </div>
+
+        ${refs.length ? `
+        <div class="scroll-reveal" style="margin-bottom:44px;">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#ff4b4b;margin-bottom:14px;">Proven results</div>
+          ${refSpotlight}
+        </div>` : ''}
+
+        <div class="scroll-reveal" id="ep-nextstep-display" style="margin-bottom:32px;">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#ff4b4b;margin-bottom:14px;">Here's what I'd suggest</div>
+          <div style="background:white;border-radius:16px;padding:28px 32px;box-shadow:0 1px 6px rgba(0,0,0,.06);">
+            <p style="font-size:15px;color:#444;line-height:1.75;margin-bottom:22px;">${data.next_step||''}</p>
+            <a href="mailto:${profile.email}" style="display:inline-flex;align-items:center;gap:8px;padding:13px 26px;background:linear-gradient(135deg,#ff4b4b,#ff744f);color:white;font-family:'Maven Pro',sans-serif;font-weight:700;font-size:14px;border-radius:99px;text-decoration:none;transition:transform .15s,box-shadow .15s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(255,75,75,.35)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+              <i class="ph ph-calendar-check" style="font-size:15px;"></i> ${data.cta_label||'Book 30 minutes'}
+            </a>
+            <div style="font-size:11px;color:#bbb;margin-top:10px;">No deck. No pitch. Just a conversation.</div>
+          </div>
+        </div>
+
+        <div class="scroll-reveal" style="background:white;border-radius:16px;padding:24px 32px;box-shadow:0 1px 6px rgba(0,0,0,.06);display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+          ${avatar}
+          <div style="flex:1;min-width:180px;">
+            <div style="font-size:17px;font-weight:700;color:#100c2a;margin-bottom:3px;">${profile.name}</div>
+            <div style="font-size:13px;color:#888;margin-bottom:8px;">${profile.role}</div>
+            <a href="mailto:${profile.email}" style="font-size:14px;color:#ff4b4b;font-weight:600;text-decoration:none;">${profile.email}</a>
+          </div>
+          <a href="mailto:${profile.email}" style="display:inline-flex;align-items:center;gap:7px;padding:10px 20px;background:#f5f3f0;color:#100c2a;font-family:'Maven Pro',sans-serif;font-weight:700;font-size:13px;border-radius:99px;text-decoration:none;" onmouseover="this.style.background='#ebe9e4'" onmouseout="this.style.background='#f5f3f0'">
+            <i class="ph ph-envelope" style="font-size:14px;"></i> Send a message
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="out-footer">${LOGO_SVG_WHITE}<div class="out-footer-note">Prepared by valantic · valantic.ai</div></div>
+
+    <style>
+      @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+      @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+      .scroll-reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .6s ease;}
+      .scroll-reveal.visible{opacity:1;transform:none;}
+    </style>
+  `;
+
+  // Typewriter on full headline — reveal container after delay, then type
+  const fullText = firstName + ', ' + greetingText;
+  const nameLen = (firstName + ',').length;
+  let ni = 0;
+  const twOut = document.getElementById('tw-out');
+  const twCursor = document.getElementById('tw-cursor');
+  const twNameDone = document.getElementById('tw-name-done');
+  const twRestOut = document.getElementById('tw-rest-out');
+  const twContainer = document.getElementById('tw-container');
+
+  setTimeout(() => {
+    if (twContainer) twContainer.style.visibility = 'visible';
+    if (twCursor) twCursor.style.display = 'inline';
+    const timer = setInterval(() => {
+      if (ni <= fullText.length) {
+        if (ni <= nameLen) {
+          if (twOut) twOut.textContent = fullText.slice(0, ni);
+        } else {
+          if (twOut) twOut.style.display = 'none';
+          if (twNameDone) twNameDone.style.display = 'inline';
+          if (twRestOut) {
+            twRestOut.style.display = 'inline';
+            twRestOut.textContent = ' ' + fullText.slice(nameLen + 1, ni);
+          }
+        }
+        ni++;
+      } else {
+        clearInterval(timer);
+        if (twCursor) twCursor.style.display = 'none';
+      }
+    }, 45);
+  }, 400);
+
+  // Store refs for spotlight
+  window._spotRefs = refs;
+  window._spotIdx = 0;
+
+  // Auto-advance spotlight
+  if (refs.length > 1) {
+    window._spotTimer = setInterval(() => spotlightGoto((window._spotIdx + 1) % refs.length), 8000);
+  }
+
+  // Scroll reveal
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target);} });
+  }, {threshold: 0.08});
+  setTimeout(() => document.querySelectorAll('.scroll-reveal').forEach(el => obs.observe(el)), 50);
+}
+
+function spotlightGoto(i) {
+  const refs = window._spotRefs || [];
+  if (!refs.length) return;
+  window._spotIdx = i;
+  // Reset auto-advance timer
+  if (window._spotTimer) { clearInterval(window._spotTimer); }
+  if (refs.length > 1) window._spotTimer = setInterval(() => spotlightGoto((window._spotIdx + 1) % refs.length), 8000);
+
+  document.querySelectorAll('.ref-spot').forEach((el, j) => {
+    el.style.display = j === i ? 'block' : 'none';
+  });
+  document.querySelectorAll('.ref-dot-btn').forEach((d, j) => {
+    d.style.width = j === i ? '24px' : '8px';
+    d.style.background = j === i ? '#ff4b4b' : '#ccc';
+  });
+  const counter = document.getElementById('ref-spot-counter');
+  if (counter) counter.textContent = `${i + 1} / ${refs.length}`;
+}
+
+let _refIdx = 0;
+function gotoRefC(i) {}
+function nextRefC() {}
+function prevRef() {}
+function nextRef() {}
+function expandRef() {}
+function closeRef() {}
+
+// ── BACKEND URL ───────────────────────────────────────────────────────────
+// Change this once backend is deployed on Azure:
+// BACKEND_URL defined above
+
+async function markSent() {
+  const btn = document.getElementById('publish-btn');
+  if (!btn) return;
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ph ph-spinner"></i> Publishing…';
+
+  try {
+    let url;
+
+    if (BACKEND_URL) {
+      // Real backend — POST the generated HTML
+      const html = '<!DOCTYPE html>' + document.getElementById('output-screen').innerHTML;
+      const res = await fetch(`${BACKEND_URL}/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: _lastInput?.name || '',
+          company: _lastInput?.company || '',
+          role: _lastInput?.role || '',
+          html
+        })
+      });
+      if (!res.ok) throw new Error(`Backend error: ${res.status}`);
+      const data = await res.json();
+      url = data.url;
+    } else {
+      // Demo mode — fake URL
+      const slug = `${(_lastInput?.name||'pitch').split(' ')[0].toLowerCase()}-${(_lastInput?.company||'valantic').toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')}-${Math.random().toString(36).slice(2,8)}`;
+      url = `https://valantic.ai/p/${slug}`;
+    }
+
+    // Copy to clipboard
+    try { await navigator.clipboard.writeText(url); } catch(e) {}
+
+    // Update button
+    btn.classList.add('sent');
+    btn.disabled = false;
+    btn.innerHTML = `<i class="ph ph-check"></i> Link copied!`;
+
+    // Show URL toast
+    showToast(url);
+
+    // 🎉 Team Konfetti
+    fireConfetti();
+
+  } catch (err) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ph ph-paper-plane-tilt"></i> Ready to send';
+    alert('Publish failed: ' + err.message);
+  }
+}
+
+function showToast(url) {
+  const toast = document.createElement('div');
+  toast.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+    background:#100c2a;border:1px solid rgba(255,255,255,0.12);color:white;
+    font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;
+    padding:12px 20px;border-radius:10px;z-index:9999;
+    display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,0.4);
+    max-width:90vw;`;
+  toast.innerHTML = `<i class="ph ph-link" style="color:#ff4b4b;font-size:16px;flex-shrink:0;"></i>
+    <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${url}</span>
+    <span style="color:rgba(255,255,255,0.4);flex-shrink:0;">· copied</span>`;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
+}
+
+function fireConfetti() {
+  const colors = ['#ff4b4b','#ff744f','#ffffff','#193773','#5b26b7','#c0aa81'];
+  for (let i = 0; i < 90; i++) {
+    const el = document.createElement('div');
+    el.style.cssText = `position:fixed;width:${4+Math.random()*7}px;height:${4+Math.random()*7}px;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      left:${Math.random()*100}vw;top:-12px;
+      border-radius:${Math.random()>0.4?'50%':'2px'};
+      z-index:9999;pointer-events:none;`;
+    document.body.appendChild(el);
+    el.animate([
+      {transform:`translateY(0) rotate(0deg) scale(1)`,opacity:1},
+      {transform:`translateY(105vh) rotate(${540*Math.random()-270}deg) scale(0.4)`,opacity:0}
+    ], {duration:1400+Math.random()*800, easing:'cubic-bezier(.25,.46,.45,.94)'})
+      .onfinish = () => el.remove();
+  }
+}
+
+
+// ── EDIT PANEL ────────────────────────────────────────────────────────────
+let _editTab = 'prompt';
+
+function switchEditTab(tab) {
+  _editTab = tab;
+  document.getElementById('edit-mode-prompt').style.display = tab === 'prompt' ? 'flex' : 'none';
+  document.getElementById('edit-mode-fields').style.display = tab === 'fields' ? 'flex' : 'none';
+  document.getElementById('tab-prompt').style.borderBottomColor = tab === 'prompt' ? '#ff4b4b' : 'transparent';
+  document.getElementById('tab-prompt').style.color = tab === 'prompt' ? 'white' : 'rgba(255,255,255,0.35)';
+  document.getElementById('tab-fields').style.borderBottomColor = tab === 'fields' ? '#ff4b4b' : 'transparent';
+  document.getElementById('tab-fields').style.color = tab === 'fields' ? 'white' : 'rgba(255,255,255,0.35)';
+  const btn = document.getElementById('ep-apply-btn');
+  if (btn) btn.innerHTML = tab === 'prompt'
+    ? '<i class="ph ph-sparkle"></i> Regenerate'
+    : '<i class="ph ph-check"></i> Save';
+}
+
+function setPromptSuggestion(text) {
+  document.getElementById('ep-prompt-instruction').value = text;
+  document.getElementById('ep-prompt-instruction').focus();
+}
+
+async function applyEditPanel() {
+  if (_editTab === 'fields') {
+    saveEdits();
+  } else {
+    const instruction = document.getElementById('ep-prompt-instruction').value.trim();
+    if (!instruction) { alert('Tell Claude what to change first.'); return; }
+    closeEditPanel();
+    await regenerateWithInstruction(instruction);
+  }
+}
+
+async function regenerateWithInstruction(instruction) {
+  if (!_lastInput) return;
+  showLoading();
+  const profile = loadProfile();
+  try {
+    const loadingMsgs = ['Applying your changes…','Rewriting the story…','Almost there…'];
+    let msgIdx = 0;
+    const msgInterval = setInterval(() => {
+      msgIdx = (msgIdx + 1) % loadingMsgs.length;
+      document.getElementById('loading-msg').textContent = loadingMsgs[msgIdx];
+    }, 1800);
+
+    let result;
+    if (BACKEND_URL) {
+      const res = await fetch(`${BACKEND_URL}/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-valantic-secret': 'valantic2026' },
+        body: JSON.stringify({ ..._lastInput, context: (_lastInput.context || '') + `\n\nRefinement instruction: ${instruction}`, contact: profile }),
+      });
+      clearInterval(msgInterval);
+      if (!res.ok) throw new Error(`Backend ${res.status}`);
+      const data = await res.json();
+      result = data.story;
+    } else {
+      const apiKey = typeof DEMO_API_KEY !== 'undefined' ? DEMO_API_KEY : null;
+      if (!apiKey) { clearInterval(msgInterval); showOutput(); return; }
+      const prompt = buildDemoPrompt(_lastInput.name, _lastInput.role, _lastInput.company,
+        (_lastInput.context || '') + `\n\nRefinement: ${instruction}`);
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        body: JSON.stringify({ model: 'claude-sonnet-4-5', max_tokens: 1500, messages: [{ role: 'user', content: prompt }] }),
+      });
+      clearInterval(msgInterval);
+      const data = await response.json();
+      const text = data.content.map(i => i.text || '').join('');
+      result = JSON.parse(text.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim());
+    }
+    renderOutput(result, _currentInput);
+  } catch (err) {
+    console.error(err);
+    showOutput();
+    alert('Error: ' + err.message);
+  }
+}
+
+function openEditPanel() {
+  const data = _currentData;
+  const panel = document.getElementById('edit-panel');
+  const backdrop = document.getElementById('edit-backdrop');
+
+  // Populate fields
+  document.getElementById('ep-headline').value = data.headline || '';
+  document.getElementById('ep-tagline').value = data.tagline || '';
+  document.getElementById('ep-situation').value = data.situation || data.context_paragraph || '';
+  document.getElementById('ep-nextstep').value = data.next_step || '';
+
+  // What we bring — up to 3
+  for (let i = 0; i < 3; i++) {
+    const item = (data.what_we_gain || data.what_we_bring || [])[i];
+    const el = document.getElementById(`ep-bring-${i}`);
+    if (el) el.value = item ? `${item.title}\n${item.description}` : '';
+  }
+
+  panel.classList.add('open');
+  backdrop.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeEditPanel() {
+  document.getElementById('edit-panel').classList.remove('open');
+  document.getElementById('edit-backdrop').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function saveEdits() {
+  const data = _currentData;
+
+  data.headline = document.getElementById('ep-headline').value.trim();
+  data.tagline = document.getElementById('ep-tagline').value.trim();
+  data.situation = document.getElementById('ep-situation').value.trim();
+  data.context_paragraph = data.situation;
+  data.next_step = document.getElementById('ep-nextstep').value.trim();
+
+  // Parse what_we_bring edits
+  for (let i = 0; i < 3; i++) {
+    const el = document.getElementById(`ep-bring-${i}`);
+    if (!el || !el.value.trim()) continue;
+    const lines = el.value.trim().split('\n');
+    if ((data.what_we_gain || data.what_we_bring) && (data.what_we_gain || data.what_we_bring)[i]) {
+      const arr = data.what_we_gain || data.what_we_bring;
+      arr[i].title = lines[0] || arr[i].title;
+      arr[i].description = lines.slice(1).join(' ').trim() || arr[i].description;
+    }
+  }
+
+  closeEditPanel();
+  _rebuildOutput();
+  showOutput();
+}
+
+// ── SCREEN HELPERS ────────────────────────────────────────────────────────
+let _lastInput = null;
+
+function showInput(prefill) {
+  document.getElementById('input-screen').style.display = 'flex';
+  document.getElementById('loading-screen').style.display = 'none';
+  document.getElementById('output-screen').style.display = 'none';
+  if (prefill) {
+    document.getElementById('contact-name').value = prefill.name || '';
+    document.getElementById('contact-role').value = prefill.role || '';
+    document.getElementById('contact-company').value = prefill.company || '';
+    document.getElementById('contact-context').value = prefill.context || '';
+    if (prefill.apiKey) document.getElementById('api-key').value = prefill.apiKey;
+    setTimeout(() => document.getElementById('contact-context').focus(), 100);
+  }
+  window.scrollTo(0, 0);
+}
+
+function showLoading() {
+  document.getElementById('input-screen').style.display = 'none';
+  document.getElementById('loading-screen').style.display = 'flex';
+  document.getElementById('output-screen').style.display = 'none';
+}
+
+function showOutput() {
+  document.getElementById('input-screen').style.display = 'none';
+  document.getElementById('loading-screen').style.display = 'none';
+  document.getElementById('output-screen').style.display = 'block';
+  window.scrollTo(0, 0);
+}
+
+document.getElementById('input-screen').style.display = 'flex';
+(function init() {
+  renderProfileDisplay(loadProfile());
+  renderHistory();
+  // Load stats counter
+  if (BACKEND_URL) {
+    fetch(`${BACKEND_URL}/stats`)
+      .then(r => r.json())
+      .then(d => {
+        const el = document.getElementById('stats-count');
+        if (el && d.total !== undefined) {
+          el.innerHTML = `<span style="width:6px;height:6px;border-radius:50%;background:#ff4b4b;display:inline-block;animation:pulse 2s infinite;"></span> <strong style="color:rgba(255,255,255,.6);">${d.total}</strong> pitches generated · <strong style="color:rgba(255,255,255,.6);">${d.opened}</strong> opened`;
+        }
+      })
+      .catch(() => {
+        const el = document.getElementById('stats-count');
+        if (el) el.style.display = 'none';
+      });
+  } else {
+    const el = document.getElementById('stats-count');
+    if (el) el.style.display = 'none';
+  }
+})();
+</script>
+
+<!-- ══════════════════════════════════════════
+     EDIT PANEL (persistent, outside output-screen)
+══════════════════════════════════════════ -->
+<div class="edit-backdrop" id="edit-backdrop" onclick="closeEditPanel()"></div>
+<div class="edit-panel" id="edit-panel">
+  <div class="ep-header">
+    <span class="ep-title">Edit Story</span>
+    <button class="ep-close" onclick="closeEditPanel()">×</button>
+  </div>
+
+  <!-- Mode tabs -->
+  <div style="display:flex;gap:0;padding:0 22px;border-bottom:1px solid rgba(255,255,255,0.07);">
+    <button id="tab-prompt" onclick="switchEditTab('prompt')" style="font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 16px;background:none;border:none;border-bottom:2px solid #ff4b4b;color:white;cursor:pointer;">
+      <i class="ph ph-chat-text" style="margin-right:5px;"></i>Prompt
+    </button>
+    <button id="tab-fields" onclick="switchEditTab('fields')" style="font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:600;padding:10px 16px;background:none;border:none;border-bottom:2px solid transparent;color:rgba(255,255,255,0.35);cursor:pointer;">
+      <i class="ph ph-sliders" style="margin-right:5px;"></i>Fields
+    </button>
+  </div>
+
+  <!-- PROMPT MODE -->
+  <div id="edit-mode-prompt" class="ep-body">
+    <div style="font-size:13px;color:rgba(255,255,255,0.4);margin-bottom:12px;line-height:1.5;">Tell Claude what to change — it'll regenerate the story with your instructions.</div>
+    <div class="ep-field">
+      <label>What should change?</label>
+      <textarea id="ep-prompt-instruction" style="min-height:120px;" placeholder="e.g. Make the tone more direct and focus more on cost savings. The client is actually in retail, not manufacturing."></textarea>
+    </div>
+    <div style="margin-top:8px;">
+      <div style="font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.25);margin-bottom:8px;">Quick suggestions</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        <button onclick="setPromptSuggestion('Make the tone more direct and confident')" class="ep-suggestion">More direct</button>
+        <button onclick="setPromptSuggestion('Focus more on cost savings and ROI')" class="ep-suggestion">Focus on ROI</button>
+        <button onclick="setPromptSuggestion('Make it shorter and more punchy')" class="ep-suggestion">Shorter</button>
+        <button onclick="setPromptSuggestion('Use a more human, less corporate tone')" class="ep-suggestion">More human</button>
+        <button onclick="setPromptSuggestion('Strengthen the references section with more specific results')" class="ep-suggestion">Stronger proof</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FIELDS MODE -->
+  <div id="edit-mode-fields" class="ep-body" style="display:none;">
+    <div class="ep-field">
+      <label>Headline</label>
+      <input type="text" id="ep-headline" />
+    </div>
+    <div class="ep-field">
+      <label>Tagline</label>
+      <input type="text" id="ep-tagline" />
+    </div>
+    <div class="ep-divider"></div>
+    <div class="ep-field">
+      <label>The Situation</label>
+      <textarea id="ep-situation" style="min-height:120px;"></textarea>
+    </div>
+    <div class="ep-divider"></div>
+    <div class="ep-field">
+      <label>What you'll gain — 01</label>
+      <textarea id="ep-bring-0"></textarea>
+    </div>
+    <div class="ep-field">
+      <label>What you'll gain — 02</label>
+      <textarea id="ep-bring-1"></textarea>
+    </div>
+    <div class="ep-field">
+      <label>What you'll gain — 03</label>
+      <textarea id="ep-bring-2"></textarea>
+    </div>
+    <div class="ep-divider"></div>
+    <div class="ep-field">
+      <label>Proposed next step</label>
+      <textarea id="ep-nextstep"></textarea>
+    </div>
+  </div>
+
+  <div class="ep-footer">
+    <button class="ep-cancel" onclick="closeEditPanel()">Cancel</button>
+    <button class="ep-save" id="ep-apply-btn" onclick="applyEditPanel()">
+      <i class="ph ph-sparkle"></i> Apply
+    </button>
+  </div>
+</div>
+</div>
+
+</body>
+</html>
