@@ -261,17 +261,15 @@ function buildHTML(data, input, contact) {
   const refSpotlight = refs.length ? `
     <div style="position:relative;">
       ${refs.map((r,i)=>`
-      <div class="rsp" style="display:${i===0?'block':'none'};background:#100c2a;border-radius:20px;padding:40px 44px;min-height:220px;position:relative;overflow:hidden;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px;">
-          ${!r.client.startsWith('NDA')&&r.nda!=='full'?`<img src="https://logo.clearbit.com/${(r.client||'').toLowerCase().replace(/[^a-z0-9]/g,'')}.com" style="height:16px;width:auto;opacity:.35;filter:brightness(10);" onerror="this.style.display='none'" alt="">`:''}
-          <span style="font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.3);">${r.client.startsWith('NDA')||r.nda==='full'?r.display:r.client}</span>
+      <div class="rsp" style="display:${i===0?'block':'none'};">
+        <div class="ref-meta">
+          ${!r.client.startsWith('NDA')&&r.nda!=='full'?`<img src="https://logo.clearbit.com/${(r.client||'').toLowerCase().replace(/[^a-z0-9]/g,'')}.com" style="height:15px;width:auto;opacity:.3;filter:brightness(10);" onerror="this.style.display='none'" alt="">`:''}
+          <span style="font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.28);">${r.client.startsWith('NDA')||r.nda==='full'?r.display:r.client}</span>
           <span style="font-size:10px;color:rgba(255,255,255,.15);">· ${r.industry||''}</span>
         </div>
-        <div style="margin-bottom:16px;">
-          <div style="font-size:clamp(40px,6vw,72px);font-weight:700;line-height:1;color:#ff4b4b;word-break:break-word;">${r.number}</div>
-        </div>
-        <div style="font-size:15px;color:rgba(255,255,255,.72);line-height:1.65;max-width:600px;">${r.description}</div>
-        <div style="position:absolute;right:-10px;bottom:-20px;font-size:160px;font-weight:700;color:rgba(255,255,255,.02);line-height:1;pointer-events:none;user-select:none;overflow:hidden;">${r.number}</div>
+        <div class="ref-num">${r.number}</div>
+        <div class="ref-desc">${r.description}</div>
+        <div class="ref-ghost">${r.number}</div>
       </div>`).join('')}
       ${refs.length>1?`<div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;">
         <div style="display:flex;gap:7px;">${refs.map((_,i)=>`<button onclick="sg(${i})" style="width:${i===0?'24':'8'}px;height:8px;border-radius:4px;border:none;background:${i===0?'#ff4b4b':'#ccc'};cursor:pointer;transition:all .25s;padding:0;" id="rb-${i}"></button>`).join('')}</div>
@@ -297,36 +295,51 @@ function buildHTML(data, input, contact) {
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Maven Pro',sans-serif;background:#f5f3f0;color:#100c2a;-webkit-font-smoothing:antialiased;}
-nav{background:#100c2a;border-bottom:1px solid rgba(255,255,255,.07);padding:14px 56px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:50;}
+/* ── consistent inner width across all sections ── */
+.inner{max-width:1100px;margin:0 auto;padding:0 56px;}
+nav{background:#100c2a;border-bottom:1px solid rgba(255,255,255,.07);position:sticky;top:0;z-index:50;}
+.nav-inner{max-width:1100px;margin:0 auto;padding:14px 56px;display:flex;justify-content:space-between;align-items:center;}
 .nc{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:700;color:white;background:linear-gradient(135deg,#ff4b4b,#ff744f);padding:9px 22px;border-radius:99px;text-decoration:none;}
-.hero{position:relative;overflow:hidden;background:#100c2a;padding:64px 56px 72px;min-height:300px;display:flex;align-items:flex-end;}
-.blob{position:absolute;top:-15%;right:-10%;height:115%;pointer-events:none;opacity:.9;mix-blend-mode:screen;}
-.hc{position:relative;z-index:1;max-width:900px;width:100%;}
+.hero{position:relative;overflow:hidden;background:#100c2a;}
+.hero-inner{max-width:1100px;margin:0 auto;padding:64px 56px 72px;min-height:300px;display:flex;align-items:flex-end;position:relative;z-index:1;}
+.blob{position:absolute;top:-15%;right:max(-10%, calc(50% - 610px));height:115%;pointer-events:none;opacity:.9;mix-blend-mode:screen;}
+.hc{position:relative;z-index:1;max-width:860px;width:100%;}
 .wrap{max-width:1100px;margin:0 auto;padding:52px 56px 80px;}
 .lbl{font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#ff4b4b;margin-bottom:14px;}
 .wcard{background:white;border-radius:16px;padding:28px 32px;box-shadow:0 1px 6px rgba(0,0,0,.06);}
-.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;}
+.card-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
 .cta{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;background:linear-gradient(135deg,#ff4b4b,#ff744f);color:white;font-family:'Maven Pro',sans-serif;font-weight:700;font-size:14px;border-radius:99px;text-decoration:none;transition:transform .15s,box-shadow .15s;}
 .cta:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(255,75,75,.35);}
-footer{background:#100c2a;padding:28px 56px;display:flex;justify-content:space-between;align-items:center;}
+footer{background:#100c2a;}
+.footer-inner{max-width:1100px;margin:0 auto;padding:28px 56px;display:flex;justify-content:space-between;align-items:center;}
 .mob{display:none;position:fixed;bottom:0;left:0;right:0;z-index:99;background:white;border-top:1px solid #e5e2dc;padding:12px 16px;}
+/* ── reference cards ── */
+.rsp{border-radius:20px;background:#100c2a;padding:40px 44px;overflow:hidden;position:relative;}
+.ref-meta{display:flex;align-items:center;gap:10px;margin-bottom:20px;}
+.ref-num{font-size:clamp(36px,5vw,64px);font-weight:700;line-height:1;color:#ff4b4b;margin-bottom:14px;word-break:break-word;max-width:100%;}
+.ref-desc{font-size:15px;color:rgba(255,255,255,.72);line-height:1.65;}
+.ref-ghost{position:absolute;right:-10px;bottom:-20px;font-size:140px;font-weight:700;color:rgba(255,255,255,.02);line-height:1;pointer-events:none;user-select:none;overflow:hidden;max-width:60%;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
 .sr{opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .6s ease;}
 .sr.v{opacity:1;transform:none;}
-@media(max-width:700px){nav,.hero,footer,.wrap{padding-left:20px;padding-right:20px;}.rsp{padding:28px 24px !important;}.rsp>div:last-of-type{grid-template-columns:1fr !important;gap:16px !important;}.mob{display:block;}body{padding-bottom:68px;}}
+@media(max-width:900px){.card-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:700px){.nav-inner,.hero-inner,.wrap,.footer-inner{padding-left:20px;padding-right:20px;}.rsp{padding:28px 24px;}.card-grid{grid-template-columns:1fr;}.mob{display:block;}body{padding-bottom:68px;}}
 </style>
 </head>
 <body>
 <nav>
-  ${LOGO_W}
-  <div style="display:flex;align-items:center;gap:12px;">
-    <img src="https://logo.clearbit.com/${domain}" style="height:18px;opacity:.4;filter:brightness(10);" onerror="this.style.display='none'" alt="">
-    <a href="mailto:${contact.email}?subject=Re: valantic for ${input.company}" class="nc">Get in touch</a>
+  <div class="nav-inner">
+    ${LOGO_W}
+    <div style="display:flex;align-items:center;gap:12px;">
+      <img src="https://logo.clearbit.com/${domain}" style="height:18px;opacity:.4;filter:brightness(10);" onerror="this.style.display='none'" alt="">
+      <a href="mailto:${contact.email}?subject=Re: valantic for ${input.company}" class="nc">Get in touch</a>
+    </div>
   </div>
 </nav>
 <section class="hero">
   <div class="blob">${BLOB}</div>
+  <div class="hero-inner">
   <div class="hc">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:22px;opacity:0;animation:fadeUp .5s .1s ease forwards;">
       <span style="font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.35);">${input.name}</span>
@@ -336,6 +349,7 @@ footer{background:#100c2a;padding:28px 56px;display:flex;justify-content:space-b
     <div style="font-size:clamp(28px,4vw,52px);font-weight:700;line-height:1.18;max-width:840px;opacity:0;animation:fadeUp .6s .3s ease forwards;">
       <span id="tw" style="color:white;"></span><span id="twn" style="display:none;background:linear-gradient(135deg,#ff4b4b,#ff744f);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">${firstName},</span><span id="twr" style="color:white;display:none;"> ${greetingClean}</span><span id="twc" style="color:#ff4b4b;animation:blink 1s step-end infinite;display:none;">|</span>
     </div>
+  </div>
   </div>
 </section>
 <div style="background:#f5f3f0;">
@@ -361,7 +375,7 @@ footer{background:#100c2a;padding:28px 56px;display:flex;justify-content:space-b
   </div>
 </div>
 </div>
-<footer>${LOGO_W}<span style="font-size:12px;color:rgba(255,255,255,.25);">valantic.ai</span></footer>
+<footer><div class="footer-inner">${LOGO_W}<span style="font-size:12px;color:rgba(255,255,255,.25);">valantic.ai</span></div></footer>
 <div class="mob"><a href="mailto:${contact.email}" class="cta" style="width:100%;justify-content:center;"><i class="ph ph-calendar-check" style="font-size:15px;"></i> ${data.cta_label||'Book 30 minutes'}</a></div>
 <script>
 // Typewriter on full headline — delay start to avoid flash
