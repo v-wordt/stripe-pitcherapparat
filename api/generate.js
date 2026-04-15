@@ -124,24 +124,24 @@ const INTELLIGENCE = {
 
   // ── REFERENCES ──────────────────────────────────────────────────────────
   references: [
-    { client: "DATEV", metric: "AI roadmap + shared vision", description: "Developed shared AI vision and strategy for DATEV's internal IT including use case clustering, strategic roadmap and stakeholder alignment workshops.", industry: "Software", service: "AI North Star" },
-    { client: "Siemens Energy", metric: "KPI needle moved", description: "6-week impact increments to discover, build and scale AI-supported process enhancements across KPI-critical business areas.", industry: "Energy", service: "AI North Star / Process AI" },
-    { client: "JUMO", metric: "119 → 12 prioritised use cases, 3 in production", description: "Business-oriented AI strategy with governance model. 119 use cases identified, 12 prioritised, 3 in production by end of 2025.", industry: "Manufacturing", service: "AI North Star" },
-    { client: "Amedes", metric: "Investor-ready AI narrative in 6 weeks", description: "Top-down AI use case assessment and value driver modelling — creating investor-grade AI ambition narrative for Strategy Days.", industry: "Healthcare", service: "AI Value Quantification" },
-    { client: "ERGO", metric: "20–40% request deflection", description: "Conversational AI agents for 24/7 customer service reducing repetitive inquiry volume while improving CSAT through faster response times.", industry: "Insurance", service: "OmniCare Agent" },
-    { client: "Toyota", metric: "CSAT improvement", description: "AI-powered customer service automation with CRM integration and continuous learning from customer feedback loops.", industry: "Automotive", service: "OmniCare Agent / Conversational AI" },
-    { client: "Bestseller", metric: "15–30% fewer forecast errors", description: "ML demand forecasting models tailored to fashion retail patterns, reducing inventory costs while maintaining service levels.", industry: "Retail", service: "DemandSense AI" },
-    { client: "A1 Telekom Austria", metric: "Improved planning accuracy", description: "AI-based demand forecasting incorporating external signals (seasonality, promotions) to reduce stockouts and tied-up capital.", industry: "Telecommunications", service: "DemandSense AI" },
-    { client: "Dockweiler", metric: "3 FTEs saved", description: "GenAI automation reading and interpreting incoming email orders and generating SAP order suggestions — improving data accuracy and offer lead time.", industry: "Manufacturing", service: "SAP AI / Process Automation" },
-    { client: "Pandora", metric: "Demand forecasting optimised", description: "AI-driven demand and sales forecasting tailored to retail patterns, optimising inventory and supply chain planning.", industry: "Retail", service: "DemandSense AI / Data Platform" },
-    { client: "valantic (internal)", metric: "30% time savings, 4.500 employees", description: "AI-first transformation: vally as enterprise AI assistant, 4,500+ employees trained, up to 30% time savings through streamlined data access.", industry: "Consulting", service: "AI North Star / vally Platform" },
-    { client: "DB (Deutsche Bahn)", metric: "200+ AI cases, >20 in production", description: "Organisation-wide AI programme — use case workshops, management decisions, portfolio steering with significantly higher C-level funding.", industry: "Transport & Logistics", service: "AI North Star / Portfolio Management" },
-    { client: "MEWA", metric: "Data governance established", description: "Data governance organisation and AI use-case portfolio management framework aligning AI initiatives with circular economy business goals.", industry: "Logistics", service: "Data Excellence" },
-    { client: "NDA TelCo", metric: "40% cost reduction per feature", description: "GenAI-powered automated ticket generator for requirements engineering — integrating Azure, OpenAI and Jira.", industry: "Telecommunications", service: "AI Coding / Ticket Automation" },
-    { client: "Sonax", metric: "Enterprise AI platform deployed", description: "Company Intelligence Hub deployment for internal productivity — vally as central AI assistant with enterprise data integration.", industry: "Manufacturing", service: "Enterprise AI Agent Hub / vally" },
-    { client: "Allianz", metric: "GEO + Agentic Web", description: "AI Visibility & GEO Audit plus MCP integration and Agentic Web services for digital marketing and AI-native search optimisation.", industry: "Insurance", service: "GEO Audit / MCP / Agent Development" },
-    { client: "PIK AG", metric: "AI-powered product data", description: "Automated product data generation and enrichment using AI — improving data quality and efficiency in digital sales.", industry: "Retail", service: "AI in E-Commerce / Content AI" },
-    { client: "Miele", metric: "CRM AI integration", description: "AI-enhanced CRM with next best action recommendations and automated pipeline insights.", industry: "Manufacturing", service: "AI for CRM" },
+    { client: "DATEV", display: "DATEV", nda: false, metric: "AI roadmap + shared vision", description: "Developed shared AI vision and strategy for DATEV's internal IT including use case clustering, strategic roadmap and stakeholder alignment workshops.", industry: "Software", service: "AI North Star" },
+    { client: "Siemens Energy", display: "Siemens Energy", nda: false, metric: "KPI impact in 6 weeks", description: "6-week impact increments to discover, build and scale AI-supported process enhancements across KPI-critical business areas.", industry: "Energy", service: "AI North Star / Process AI" },
+    { client: "JUMO", display: "JUMO", nda: false, metric: "119 use cases identified, 3 in production by year-end", description: "Business-oriented AI strategy with governance model — 119 use cases identified, 12 prioritised, 3 selected for production.", industry: "Manufacturing", service: "AI North Star" },
+    { client: "Amedes", display: "Amedes", nda: false, metric: "Investor-ready AI narrative in 6 weeks", description: "Top-down AI use case assessment and value driver modelling — creating investor-grade AI ambition narrative for Strategy Days.", industry: "Healthcare", service: "AI Value Quantification" },
+    { client: "ERGO", display: "ERGO", nda: false, metric: "20–40% request deflection", description: "Conversational AI agents for 24/7 customer service reducing repetitive inquiry volume while improving CSAT through faster response times.", industry: "Insurance", service: "OmniCare Agent" },
+    { client: "Toyota", display: "Toyota", nda: false, metric: "CSAT improvement", description: "AI-powered customer service automation with CRM integration and continuous learning from customer feedback loops.", industry: "Automotive", service: "OmniCare Agent / Conversational AI" },
+    { client: "Bestseller", display: "Bestseller", nda: false, metric: "15–30% fewer forecast errors", description: "ML demand forecasting models tailored to fashion retail patterns, reducing inventory costs while maintaining service levels.", industry: "Retail", service: "DemandSense AI" },
+    { client: "A1 Telekom Austria", display: "A1 Telekom Austria", nda: false, metric: "Improved planning accuracy", description: "AI-based demand forecasting incorporating external signals — seasonality, promotions — to reduce stockouts and tied-up capital.", industry: "Telecommunications", service: "DemandSense AI" },
+    { client: "Dockweiler", display: "Dockweiler", nda: false, metric: "3 FTEs saved", description: "GenAI automation reading incoming email orders and generating SAP order suggestions — improving data accuracy and offer lead time.", industry: "Manufacturing", service: "SAP AI / Process Automation" },
+    { client: "Pandora", display: "Pandora", nda: false, metric: "Demand forecasting optimised", description: "AI-driven demand and sales forecasting tailored to retail patterns, optimising inventory and supply chain planning.", industry: "Retail", service: "DemandSense AI / Data Platform" },
+    { client: "valantic (internal)", display: "valantic", nda: false, metric: "30% time savings, 4.500 employees", description: "AI-first transformation: vally as enterprise AI assistant, 4,500+ employees trained, up to 30% time savings through streamlined data access.", industry: "Consulting", service: "AI North Star / vally Platform" },
+    { client: "DB (Deutsche Bahn)", display: "A leading logistics & transport group", nda: "name_only", metric: "200+ AI cases identified, >20 in production", description: "Organisation-wide AI programme — use case workshops, C-level alignment, portfolio steering with significantly higher AI investment secured.", industry: "Transport & Logistics", service: "AI North Star / Portfolio Management" },
+    { client: "MEWA", display: "MEWA", nda: false, metric: "Data governance established", description: "Data governance organisation and AI use-case portfolio management framework aligning AI initiatives with circular economy business goals.", industry: "Logistics", service: "Data Excellence" },
+    { client: "NDA TelCo", display: "A leading European TelCo", nda: "full", metric: "40% cost reduction per feature", description: "GenAI-powered automated ticket generator for requirements engineering — integrating Azure, OpenAI and Jira, reducing blueprint cycle time significantly.", industry: "Telecommunications", service: "AI Coding / Ticket Automation" },
+    { client: "Sonax", display: "Sonax", nda: false, metric: "Enterprise AI platform live", description: "Company Intelligence Hub deployment — vally as central AI assistant with enterprise data integration across all business units.", industry: "Manufacturing", service: "Enterprise AI Agent Hub / vally" },
+    { client: "Allianz", display: "Allianz", nda: false, metric: "GEO + Agentic Web live", description: "AI Visibility & GEO Audit plus MCP integration and Agentic Web services for AI-native search optimisation and agentic customer journeys.", industry: "Insurance", service: "GEO Audit / MCP / Agent Development" },
+    { client: "PIK AG", display: "PIK AG", nda: false, metric: "AI-powered product data", description: "Automated product data generation and enrichment — improving data quality and efficiency in digital sales.", industry: "Retail", service: "AI in E-Commerce / Content AI" },
+    { client: "Miele", display: "Miele", nda: false, metric: "CRM AI integration", description: "AI-enhanced CRM with next best action recommendations and automated pipeline insights.", industry: "Manufacturing", service: "AI for CRM" },
   ],
 
   // ── CC OVERVIEW (for context) ────────────────────────────────────────
@@ -200,8 +200,14 @@ function buildPrompt(name, role, company, context, mcpServices = null) {
     `- ${s.name} (${s.phase.toUpperCase()}): ${s.tagline}${s.entry_metric ? ' | Result: '+s.entry_metric : ''}${s.owner && s.owner !== 'TBD' ? ' | Owner: '+s.owner : ''}`
   ).join('\n');
 
-  const refsStr = topRefs.map(r =>
-    `- ${r.client} (${r.industry}): ${r.metric} — ${r.description}`
+  // Filter out full-NDA references, anonymise name_only ones
+  const safeRefs = topRefs.filter(r => r.nda !== 'full').map(r => ({
+    ...r,
+    displayClient: r.nda === 'name_only' ? r.display : r.client
+  }));
+
+  const refsStr = safeRefs.map(r =>
+    `- ${r.displayClient} (${r.industry}): ${r.metric} — ${r.description}`
   ).join('\n');
 
   return `You are a world-class B2B sales strategist at valantic.
@@ -217,12 +223,12 @@ ${servicesStr}
 ${refsStr}
 
 RULES:
-- greeting: Include urgency signal (competitor moving, window closing). Max 15 words.
-- situation: 3-4 sentences, specific tension this role faces, opinionated, no buzzwords.
-- approaches: FUTURE tense only. Mention valantic brings dedicated AI specialists (not all of valantic). Use specific service names from the list above where relevant.
-- references: PAST tense only. Use real client names and metrics from the references list above. NEVER mix with approaches.
-- next_step: Mention dedicated AI specialists, anchor with ROI from a similar client, include why now.
-- cta_label: 4-6 words, specific.
+- greeting: Urgency signal = a business consequence, a window closing, a trend accelerating. NEVER name competitors. Max 15 words.
+- situation: 3-4 sentences. Describe the real tension this person faces in their role. Be specific, opinionated, human. No buzzwords, no generic AI hype.
+- approaches: FUTURE tense. Frame each as a specific action addressing their pain — NOT a service catalogue. Start with the business outcome or problem being solved. Only mention a valantic service name if it adds clarity. Keep it client-focused, not valantic-focused. Each approach must feel tailored to ${company}, not generic.
+- references: PAST tense ONLY. Use ONLY references where nda is false or "name_only". For "name_only" use the display name (anonymised). NEVER mention NDA clients by real name. Pick references from the same industry or most similar business challenge.
+- next_step: Concrete, specific. Mention valantic brings dedicated AI specialists for this domain. Anchor with a similar client result. Why now — one clear reason.
+- cta_label: 4-6 words, action-oriented, specific to their situation.
 
 Respond ONLY with valid JSON:
 {
@@ -255,16 +261,17 @@ function buildHTML(data, input, contact) {
   const refSpotlight = refs.length ? `
     <div style="position:relative;">
       ${refs.map((r,i)=>`
-      <div class="rsp" style="display:${i===0?'block':'none'};background:#100c2a;border-radius:20px;padding:52px 56px;min-height:280px;position:relative;overflow:hidden;">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:28px;">
-          <img src="https://logo.clearbit.com/${(r.client||'').toLowerCase().replace(/[^a-z0-9]/g,'')}.com" style="height:18px;width:auto;opacity:.4;filter:brightness(10);" onerror="this.style.display='none'" alt="">
-          <span style="font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.35);">${r.client}</span>
+      <div class="rsp" style="display:${i===0?'block':'none'};background:#100c2a;border-radius:20px;padding:40px 44px;min-height:220px;position:relative;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px;">
+          ${!r.client.startsWith('NDA')&&r.nda!=='full'?`<img src="https://logo.clearbit.com/${(r.client||'').toLowerCase().replace(/[^a-z0-9]/g,'')}.com" style="height:16px;width:auto;opacity:.35;filter:brightness(10);" onerror="this.style.display='none'" alt="">`:''}
+          <span style="font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.3);">${r.client.startsWith('NDA')||r.nda==='full'?r.display:r.client}</span>
+          <span style="font-size:10px;color:rgba(255,255,255,.15);">· ${r.industry||''}</span>
         </div>
-        <div style="display:grid;grid-template-columns:auto 1fr;gap:48px;align-items:center;">
-          <div style="font-size:clamp(72px,10vw,120px);font-weight:700;line-height:1;color:#ff4b4b;white-space:nowrap;">${r.number}</div>
-          <div style="font-size:17px;color:rgba(255,255,255,.78);line-height:1.7;">${r.description}</div>
+        <div style="margin-bottom:16px;">
+          <div style="font-size:clamp(40px,6vw,72px);font-weight:700;line-height:1;color:#ff4b4b;word-break:break-word;">${r.number}</div>
         </div>
-        <div style="position:absolute;right:-20px;bottom:-30px;font-size:220px;font-weight:700;color:rgba(255,255,255,.025);line-height:1;pointer-events:none;user-select:none;">${r.number}</div>
+        <div style="font-size:15px;color:rgba(255,255,255,.72);line-height:1.65;max-width:600px;">${r.description}</div>
+        <div style="position:absolute;right:-10px;bottom:-20px;font-size:160px;font-weight:700;color:rgba(255,255,255,.02);line-height:1;pointer-events:none;user-select:none;overflow:hidden;">${r.number}</div>
       </div>`).join('')}
       ${refs.length>1?`<div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;">
         <div style="display:flex;gap:7px;">${refs.map((_,i)=>`<button onclick="sg(${i})" style="width:${i===0?'24':'8'}px;height:8px;border-radius:4px;border:none;background:${i===0?'#ff4b4b':'#ccc'};cursor:pointer;transition:all .25s;padding:0;" id="rb-${i}"></button>`).join('')}</div>
