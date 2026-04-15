@@ -663,6 +663,22 @@
   </style>
 </head>
 <body>
+<!-- ── PASSWORD GATE ── -->
+<div id="pw-gate" style="position:fixed;inset:0;background:#100c2a;z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;font-family:'Maven Pro',sans-serif;">
+  <div style="width:100%;max-width:400px;text-align:center;">
+    <div style="font-size:13px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:12px;">valantic AI Sales Lab</div>
+    <h1 style="font-size:24px;font-weight:700;color:white;margin-bottom:8px;">Pitch Generator</h1>
+    <p style="font-size:14px;color:rgba(255,255,255,.4);margin-bottom:32px;">Internal · Sales All-Hands 2026</p>
+    <input id="pw-input" type="password" placeholder="Access code"
+      style="width:100%;padding:15px 20px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:white;font-family:'Maven Pro',sans-serif;font-size:15px;outline:none;margin-bottom:10px;display:block;"
+      onkeydown="if(event.key==='Enter')checkPW()">
+    <div id="pw-err" style="font-size:12px;color:#ff4b4b;min-height:16px;margin-bottom:10px;"></div>
+    <button onclick="checkPW()" style="width:100%;padding:14px;border-radius:12px;border:none;background:linear-gradient(135deg,#ff4b4b,#ff744f);color:white;font-family:'Maven Pro',sans-serif;font-size:15px;font-weight:700;cursor:pointer;">Access Tool</button>
+    <p style="font-size:11px;color:rgba(255,255,255,.2);margin-top:20px;">valantic confidential · internal use only</p>
+  </div>
+</div>
+<div id="main-app" style="display:none;">
+
 
 <!-- ══════════════════════════════════════════
      INPUT SCREEN
@@ -926,7 +942,7 @@ async function generatePitch() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-valantic-secret': 'valantic2026',
+          'x-valantic-secret': sessionStorage.getItem('vauth_token')||'',
         },
         body: JSON.stringify({ name, role, company, context, contact: profile }),
       });
@@ -1385,7 +1401,7 @@ async function regenerateWithInstruction(instruction) {
     if (BACKEND_URL) {
       const res = await fetch(`${BACKEND_URL}/generate`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-valantic-secret': 'valantic2026' },
+        headers: { 'Content-Type': 'application/json', 'x-valantic-secret': sessionStorage.getItem('vauth_token')||'' },
         body: JSON.stringify({ ..._lastInput, context: (_lastInput.context || '') + `\n\nRefinement instruction: ${instruction}`, contact: profile }),
       });
       clearInterval(msgInterval);
@@ -1609,5 +1625,31 @@ document.getElementById('input-screen').style.display = 'flex';
 </div>
 </div>
 
+</div>
+<script>
+(function(){if(sessionStorage.getItem('vauth')==='1'&&sessionStorage.getItem('vauth_token')){document.getElementById('pw-gate').style.display='none';document.getElementById('main-app').style.display='block';}})();
+function checkPW(){
+  const v=document.getElementById('pw-input').value.trim();
+  const e=document.getElementById('pw-err');
+  if(!v){e.textContent='Please enter an access code.';return;}
+  // No client-side validation — backend validates via SHARED_SECRET
+  // Store and show app; if backend rejects we'll catch it on first call
+  sessionStorage.setItem('vauth','1');
+  sessionStorage.setItem('vauth_token', v);
+  document.getElementById('pw-gate').style.display='none';
+  document.getElementById('main-app').style.display='block';
+}
+
+// Called when backend returns 401 — kick user back to gate
+function handleAuthError(){
+  sessionStorage.removeItem('vauth');
+  sessionStorage.removeItem('vauth_token');
+  document.getElementById('pw-gate').style.display='flex';
+  document.getElementById('main-app').style.display='none';
+  document.getElementById('pw-err').textContent='Incorrect access code.';
+  document.getElementById('pw-input').value='';
+  setTimeout(()=>document.getElementById('pw-err').textContent='',4000);
+}
+</script>
 </body>
 </html>
