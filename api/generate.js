@@ -3,7 +3,8 @@ import { put, list } from '@vercel/blob';
 import { v4 as uuidv4 } from 'uuid';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-const SHARED_SECRET = process.env.SHARED_SECRET || 'valantic2026';
+const SHARED_SECRET = process.env.SHARED_SECRET;
+if(!SHARED_SECRET) throw new Error('SHARED_SECRET env var not set');
 
 // ── MCP SERVER ────────────────────────────────────────────────────────────
 const MCP_URL = 'https://ca-reference-db-mcp-server.calmsky-b809d8a4.germanywestcentral.azurecontainerapps.io';
