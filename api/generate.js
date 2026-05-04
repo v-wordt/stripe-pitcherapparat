@@ -177,74 +177,44 @@ function buildPrompt(company, website) {
     `- ${r.displayClient} (${r.industry}): ${r.metric} — ${r.description}`
   ).join('\n');
 
-  return `You are a world-class B2B sales strategist creating a Mapping Draft — a structured value narrative that maps a prospect's pains to Stripe capabilities and positions valantic as the expert implementation partner.
+  return `You are a B2B sales strategist. Create a Mapping Draft JSON for this prospect. Be extremely concise — every string value max 15 words.
 
-## Prospect Company
-- Name: ${company}
-- Website: ${website || 'not provided'}
+Prospect: ${company} (${website || 'no website'})
 
-## Your Task
-1. **Research the prospect** from company name + website using your training knowledge to infer:
-   - Industry, business model, size/scale
-   - Current payment infrastructure
-   - Recent strategic signals (news, growth, pivots)
-
-2. **Identify 3-4 distinct prospect pains** that Stripe addresses:
-   - Cross-border growth & local payments
-   - Fraud, risk & compliance
-   - Billing, monetisation & business model fit
-   - Stack consolidation & integration
-   - (or others specific to this prospect)
-
-3. **Map each pain to Stripe capabilities:**
-   - Stripe Payments, Billing, Connect, Radar, Treasury, Issuing, Terminal, Identity, Stripe Tax, Financial Connections, Sigma, etc.
-
-4. **Position valantic as the implementation partner:**
-   - valantic is a leading European digital consulting firm with deep expertise in AI, data, and technology integration
-   - valantic has successfully delivered Stripe implementations for enterprises across industries
-   - valantic brings: industry expertise, technical architecture, compliance/security, post-go-live support
-
-## valantic Implementation Track Record
+valantic delivery proof:
 ${refsStr}
 
-## Output Format (Mapping Draft JSON)
+Output ONLY valid JSON, no markdown, no explanation:
 {
   "prospect_snapshot": {
-    "core_business": "Industry + primary service + markets served",
-    "size_scale": "Headcount estimate + revenue band + transaction volume",
-    "business_model": "B2B/B2C + pricing model + ACV or customer count",
-    "current_payment_stack": "Current PSP(s) + key integrations + tech notes",
-    "strategic_signals": "Recent news, hiring, funding, pivots, growth signals"
+    "core_business": "industry + service + markets (max 10 words)",
+    "size_scale": "headcount + revenue estimate (max 8 words)",
+    "business_model": "B2B/B2C + pricing type (max 8 words)",
+    "current_payment_stack": "current PSP(s) if known, else 'unknown' (max 8 words)",
+    "strategic_signals": "1 key recent signal (max 10 words)"
   },
   "pain_solution_blocks": [
     {
-      "block_name": "e.g. Cross-border growth & local payments",
-      "prospect_situation": "1-2 sentences describing the pain in prospect's language",
-      "stripe_answer": "Which Stripe product(s) address this + how",
-      "fit": "High | Medium | Low (based on prospect data)",
-      "rationale": "Why this fit makes sense for THIS specific company",
-      "pitch_angle": "One-liner headline for the website section"
+      "block_name": "3-5 word theme",
+      "prospect_situation": "1 sentence pain in prospect language (max 15 words)",
+      "stripe_answer": "Stripe product(s) + 1-line how (max 12 words)",
+      "fit": "High",
+      "rationale": "1 sentence why this fits (max 12 words)",
+      "pitch_angle": "4-6 word headline"
     }
   ],
   "narrative": {
-    "headline_message": "One sentence: why Stripe + valantic, for this prospect, now",
-    "headline_highlight": "1-3 words from headline (exact substring to highlight)",
-    "top_3_priorities": ["block name A", "block name B", "block name C"],
-    "de_emphasize": ["block name D if any"]
+    "headline_message": "1 sentence: Stripe + valantic value for this prospect (max 15 words)",
+    "headline_highlight": "2-3 words from headline to highlight",
+    "top_3_priorities": ["block_name_1", "block_name_2", "block_name_3"],
+    "de_emphasize": []
   },
-  "open_items": ["Clarifying question 1?", "Clarifying question 2?"],
-  "next_step": "2-3 sentences proposing concrete next steps",
-  "cta_label": "4-6 words, action-oriented"
+  "open_items": ["1 internal clarifying question?"],
+  "next_step": "1-2 sentences on next action (max 20 words)",
+  "cta_label": "4-6 words"
 }
 
-## Rules
-- Ground every claim in prospect data or training knowledge
-- If data is missing, flag it in open_items (don't invent)
-- Fit ratings: High = strong evidence + clear Stripe fit. Low = worth flagging but weaker fit
-- Never name competitors
-- Tone: opinionated, specific, human. No generic AI hype
-- 3-4 pain blocks total
-- open_items are internal clarifying questions for the sender, not seen by prospect`;
+Rules: 3 pain blocks only. Fit = High/Medium/Low. Never name competitors. Ground claims in what you know about this company.`;
 }
 
 function buildHTML(data, input, contact) {
