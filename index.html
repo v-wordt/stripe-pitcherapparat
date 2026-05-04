@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>valantic.ai | Pitch Generator</title>
+  <title>Stripe Pitcher × valantic</title>
   <link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/@phosphor-icons/web@2.1.2"></script>
   <style>
@@ -666,10 +666,10 @@
 <!-- ── PASSWORD GATE ── -->
 <div id="pw-gate" style="position:fixed;inset:0;background:#100c2a;z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;font-family:'Maven Pro',sans-serif;">
   <div style="width:100%;max-width:400px;text-align:center;">
-    <div style="font-size:13px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:12px;">valantic AI Sales Lab</div>
-    <h1 style="font-size:24px;font-weight:700;color:white;margin-bottom:8px;">Pitch Generator</h1>
-    <p style="font-size:14px;color:rgba(255,255,255,.4);margin-bottom:32px;">Internal · Sales All-Hands 2026</p>
-    <input id="pw-input" type="password" placeholder="Access code"
+    <div style="font-size:13px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:12px;">Stripe × valantic</div>
+    <h1 style="font-size:24px;font-weight:700;color:white;margin-bottom:8px;">Stripe Pitcher</h1>
+    <p style="font-size:14px;color:rgba(255,255,255,.4);margin-bottom:32px;">Intern · Beta 2026</p>
+    <input id="pw-input" type="password" placeholder="Zugangs-Code"
       style="width:100%;padding:15px 20px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:white;font-family:'Maven Pro',sans-serif;font-size:15px;outline:none;margin-bottom:10px;display:block;"
       onkeydown="if(event.key==='Enter')checkPW()">
     <div id="pw-err" style="font-size:12px;color:#ff4b4b;min-height:16px;margin-bottom:10px;"></div>
@@ -717,9 +717,22 @@
         </svg>
       </div>
 
-      <span class="eyebrow">Intelligence Layer · Demo</span>
-      <h1>Your client.<br>Our answer.</h1>
-      <p>Enter a person and their context — get a personalised valantic value story in seconds.</p>
+      <span class="eyebrow">Stripe Pitcher · Beta</span>
+      <h1>Vom Prospect zum Pitch</h1>
+      <div style="margin-top:var(--sp-3);font-size:15px;color:rgba(255,255,255,0.72);line-height:1.8;">
+        <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;">
+          <span style="color:var(--val-coral);font-weight:700;flex-shrink:0;">•</span>
+          <span>Gib den Unternehmensnamen und die Website ein</span>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;">
+          <span style="color:var(--val-coral);font-weight:700;flex-shrink:0;">•</span>
+          <span>Validiere den Mapping Entwurf</span>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:12px;">
+          <span style="color:var(--val-coral);font-weight:700;flex-shrink:0;">•</span>
+          <span>Versende den massgeschneiderten Pitch</span>
+        </div>
+      </div>
       <div id="stats-bar" style="margin-top:14px;font-size:12px;color:rgba(255,255,255,.35);display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
         <span id="stats-count" style="display:flex;align-items:center;gap:5px;"><span style="width:6px;height:6px;border-radius:50%;background:#ff4b4b;display:inline-block;animation:pulse 2s infinite;"></span>Loading…</span>
       </div>
@@ -730,25 +743,25 @@
 
     <!-- Header with profile in corner -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-3);">
-      <span class="eyebrow" style="font-size:11px;">Client</span>
+      <span class="eyebrow" style="font-size:11px;">Unternehmen</span>
       <!-- Profile pill -->
       <div style="position:relative;">
         <button onclick="toggleProfile()" id="profile-toggle" style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:99px;padding:7px 16px 7px 8px;cursor:pointer;font-family:'Maven Pro',sans-serif;">
-          <div id="profile-avatar-display" style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#ff4b4b,#ff744f);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:white;flex-shrink:0;overflow:hidden;">MS</div>
-          <div id="profile-name-display" style="font-size:14px;font-weight:600;color:rgba(255,255,255,0.8);">Maike Saager</div>
+          <div id="profile-avatar-display" style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#ff4b4b,#ff744f);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:white;flex-shrink:0;overflow:hidden;">JM</div>
+          <div id="profile-name-display" style="font-size:14px;font-weight:600;color:rgba(255,255,255,0.8);">Joshua Marckwordt</div>
           <i class="ph ph-pencil-simple" style="font-size:13px;color:rgba(255,255,255,0.4);"></i>
         </button>
         <!-- Dropdown -->
         <div id="profile-edit" style="display:none;position:absolute;top:calc(100% + 8px);right:0;width:320px;background:#0d0b20;border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:var(--sp-3);z-index:100;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-            <span style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.4);">My Profile</span>
+            <span style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.4);">Mein Profil</span>
             <button onclick="toggleProfile()" style="background:none;border:none;color:rgba(255,255,255,0.4);cursor:pointer;font-size:20px;line-height:1;padding:0;">×</button>
           </div>
           <div style="display:flex;flex-direction:column;gap:10px;">
-            <div class="form-group"><label>Your Name</label><input type="text" id="my-name" placeholder="Maike Saager" /></div>
-            <div class="form-group"><label>Your Role</label><input type="text" id="my-role" placeholder="Head of Growth Platform AI Hub" /></div>
-            <div class="form-group"><label>Your Email</label><input type="text" id="my-email" placeholder="maike.saager@valantic.com" /></div>
-            <div class="form-group"><label>Photo URL <span style="font-weight:400;opacity:.5;">(e.g. from LinkedIn)</span></label><input type="text" id="my-photo" placeholder="https://media.linkedin.com/..." /></div>
+            <div class="form-group"><label>Mein Name</label><input type="text" id="my-name" placeholder="Joshua Marckwordt" /></div>
+            <div class="form-group"><label>Meine Funktion</label><input type="text" id="my-role" placeholder="Account Manager, valantic" /></div>
+            <div class="form-group"><label>Meine E-Mail</label><input type="text" id="my-email" placeholder="joshua.marckwordt@nxt.valantic.com" /></div>
+            <div class="form-group"><label>Foto URL <span style="font-weight:400;opacity:.5;">(z.B. von LinkedIn)</span></label><input type="text" id="my-photo" placeholder="https://media.linkedin.com/..." /></div>
           </div>
           <button onclick="saveProfile()" style="margin-top:12px;font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:700;padding:9px 16px;background:var(--val-gradient);color:white;border:none;border-radius:8px;cursor:pointer;width:100%;">Save</button>
         </div>
@@ -758,35 +771,27 @@
     <!-- Client fields -->
     <div class="form-grid">
       <div class="form-group">
-        <label>Name</label>
-        <input type="text" id="contact-name" placeholder="e.g. Stefan Müller" />
+        <label>Namen des Unternehmens</label>
+        <input type="text" id="contact-company" placeholder="z.B. REWE Group" />
       </div>
       <div class="form-group">
-        <label>Company</label>
-        <input type="text" id="contact-company" placeholder="e.g. REWE Group" />
-      </div>
-      <div class="form-group full">
-        <label>Role</label>
-        <input type="text" id="contact-role" placeholder="e.g. CIO, CDO, Head of Operations" />
-      </div>
-      <div class="form-group full">
-        <label>What's going on with them?</label>
-        <textarea id="contact-context" placeholder="Who are they, what's their situation, what's keeping them up at night — anything you know. The more specific, the better the story."></textarea>
+        <label>Website des Unternehmens</label>
+        <input type="text" id="contact-website" placeholder="z.B. https://www.rewe.de" />
       </div>
     </div>
 
     <button class="generate-btn" onclick="generatePitch()">
       <i class="ph ph-sparkle" style="font-size:20px;"></i>
-      Generate personalised story
+      Pitch generieren
     </button>
 
     <!-- Version history -->
     <div id="history-section" style="display:none;margin-top:var(--sp-3);">
-      <div style="font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:10px;">Recent</div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:10px;">Zuletzt verwendet</div>
       <div id="history-list" style="display:flex;flex-direction:column;gap:6px;"></div>
     </div>
 
-    <p class="seed-note">Powered by valantic Intelligence Layer · SAP · CX/UX · AI Hub</p>
+    <p class="seed-note">Stripe × valantic · Powered by Claude</p>
   </div>
 
 </div>
@@ -810,7 +815,7 @@
 
 <script>
 // ── CONFIG — update BACKEND_URL once Vercel is deployed ───────────────────
-const BACKEND_URL = 'https://valantic-pitch-api.vercel.app/api';
+const BACKEND_URL = 'https://stripe-pitcherapparat.vercel.app/api';
 const DEMO_API_KEY = null; // for local testing only: 'sk-ant-...'
 
 // ── PROFILE (localStorage) ────────────────────────────────────────────────
@@ -818,9 +823,9 @@ function loadProfile() {
   try {
     const p = JSON.parse(localStorage.getItem('valantic_profile') || '{}');
     return {
-      name: p.name || 'Maike Saager',
-      role: p.role || 'Head of Growth Platform AI Hub, valantic',
-      email: p.email || 'maike.saager@valantic.com',
+      name: p.name || 'Joshua Marckwordt',
+      role: p.role || 'Account Manager, valantic',
+      email: p.email || 'joshua.marckwordt@nxt.valantic.com',
       photo: p.photo || null,
     };
   } catch { return {}; }
@@ -828,9 +833,9 @@ function loadProfile() {
 
 function saveProfile() {
   const p = {
-    name: document.getElementById('my-name').value.trim() || 'Maike Saager',
-    role: document.getElementById('my-role').value.trim() || 'Head of Growth Platform AI Hub, valantic',
-    email: document.getElementById('my-email').value.trim() || 'maike.saager@valantic.com',
+    name: document.getElementById('my-name').value.trim() || 'Joshua Marckwordt',
+    role: document.getElementById('my-role').value.trim() || 'Account Manager, valantic',
+    email: document.getElementById('my-email').value.trim() || 'joshua.marckwordt@nxt.valantic.com',
     photo: document.getElementById('my-photo').value.trim() || null,
   };
   localStorage.setItem('valantic_profile', JSON.stringify(p));
@@ -839,9 +844,9 @@ function saveProfile() {
 }
 
 function renderProfileDisplay(p) {
-  const initials = (p.name || 'VS').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+  const initials = (p.name || 'JM').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
   const nameEl = document.getElementById('profile-name-display');
-  if (nameEl) nameEl.textContent = p.name || 'Maike Saager';
+  if (nameEl) nameEl.textContent = p.name || 'Joshua Marckwordt';
   const av = document.getElementById('profile-avatar-display');
   if (av) {
     if (p.photo) {
@@ -889,7 +894,7 @@ function renderHistory() {
     section.style.display = 'block';
     list.innerHTML = h.map((item, i) => `
       <button onclick="loadFromHistory(${i})" style="font-family:'Maven Pro',sans-serif;width:100%;text-align:left;padding:8px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;cursor:pointer;color:rgba(255,255,255,0.7);font-size:13px;display:flex;justify-content:space-between;align-items:center;">
-        <span><strong>${item.name}</strong> · ${item.company}</span>
+        <span><strong>${item.company}</strong></span>
         <span style="color:rgba(255,255,255,0.3);font-size:11px;">${new Date(item.saved).toLocaleDateString()}</span>
       </button>`).join('');
   } catch {}
@@ -900,34 +905,30 @@ function loadFromHistory(i) {
     const h = JSON.parse(localStorage.getItem('valantic_history') || '[]');
     const item = h[i];
     if (!item) return;
-    document.getElementById('contact-name').value = item.name || '';
     document.getElementById('contact-company').value = item.company || '';
-    document.getElementById('contact-role').value = item.role || '';
-    document.getElementById('contact-context').value = item.context || '';
+    document.getElementById('contact-website').value = item.website || '';
     if (item.data) {
-      renderOutput(item.data, { name: item.name, company: item.company, role: item.role });
+      renderOutput(item.data, { company: item.company, website: item.website });
     }
   } catch {}
 }
 
 // ── GENERATE ──────────────────────────────────────────────────────────────
 async function generatePitch() {
-  const name = document.getElementById('contact-name').value.trim();
-  const role = document.getElementById('contact-role').value.trim();
   const company = document.getElementById('contact-company').value.trim();
-  const context = document.getElementById('contact-context').value.trim();
+  const website = document.getElementById('contact-website').value.trim();
   const profile = loadProfile();
 
-  if (!name || !company) {
-    alert('Please enter at least a name and company.');
+  if (!company || !website) {
+    alert('Bitte gib den Unternehmesnamen und die Website ein.');
     return;
   }
 
-  _lastInput = { name, role, company, context };
+  _lastInput = { company, website };
   showLoading();
 
   try {
-    const loadingMsgs = ['Analysing context…','Matching services…','Building value story…','Almost there…'];
+    const loadingMsgs = ['Recherchiere Unternehmen…','Analysiere Stripe Produkte…','Generiere Pitch…','Fertig!'];
     let msgIdx = 0;
     const msgInterval = setInterval(() => {
       msgIdx = (msgIdx + 1) % loadingMsgs.length;
@@ -944,7 +945,7 @@ async function generatePitch() {
           'Content-Type': 'application/json',
           'x-valantic-secret': sessionStorage.getItem('vauth_token')||'',
         },
-        body: JSON.stringify({ name, role, company, context, contact: profile }),
+        body: JSON.stringify({ company, website, contact: profile }),
       });
       clearInterval(msgInterval);
       if (!res.ok) throw new Error(`Backend ${res.status}: ${await res.text()}`);
@@ -961,7 +962,7 @@ async function generatePitch() {
         alert('Backend not yet connected. Coming soon!');
         return;
       }
-      const prompt = buildDemoPrompt(name, role, company, context);
+      const prompt = buildDemoPrompt(company, website);
       const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -981,8 +982,8 @@ async function generatePitch() {
     }
 
     // Save to history
-    saveToHistory({ name, company, role, context, data: result });
-    renderOutput(result, { name, role, company });
+    saveToHistory({ company, website, data: result });
+    renderOutput(result, { company, website });
 
   } catch (err) {
     console.error('Generate error:', err);
@@ -993,15 +994,13 @@ async function generatePitch() {
 
 let _lastPublishedUrl = null;
 
-function buildDemoPrompt(name, role, company, context) {
-  return `You are a world-class B2B sales strategist at valantic, a leading European digital consulting firm.
-Your task: create a highly personalised value story for a contact.
+function buildDemoPrompt(company, website) {
+  return `You are a world-class B2B sales strategist helping pitch Stripe to enterprises.
+Your task: create a highly personalised Stripe pitch for a prospect company.
 
-## Contact
-- Name: ${name}
-- Role: ${role || 'not specified'}
+## Prospect
 - Company: ${company}
-- What's going on: ${context || 'not specified'}
+- Website: ${website || 'not specified'}
 
 ## valantic AI Offering
 valantic combines business, data, and technology end-to-end. Technology-agnostic, opinionated. Deep industry expertise.
@@ -1494,12 +1493,10 @@ function showInput(prefill) {
   document.getElementById('loading-screen').style.display = 'none';
   document.getElementById('output-screen').style.display = 'none';
   if (prefill) {
-    document.getElementById('contact-name').value = prefill.name || '';
-    document.getElementById('contact-role').value = prefill.role || '';
     document.getElementById('contact-company').value = prefill.company || '';
-    document.getElementById('contact-context').value = prefill.context || '';
+    document.getElementById('contact-website').value = prefill.website || '';
     if (prefill.apiKey) document.getElementById('api-key').value = prefill.apiKey;
-    setTimeout(() => document.getElementById('contact-context').focus(), 100);
+    setTimeout(() => document.getElementById('contact-website').focus(), 100);
   }
   window.scrollTo(0, 0);
 }
@@ -1646,7 +1643,7 @@ function handleAuthError(){
   sessionStorage.removeItem('vauth_token');
   document.getElementById('pw-gate').style.display='flex';
   document.getElementById('main-app').style.display='none';
-  document.getElementById('pw-err').textContent='Incorrect access code.';
+  document.getElementById('pw-err').textContent='Falscher Zugangs-Code.';
   document.getElementById('pw-input').value='';
   setTimeout(()=>document.getElementById('pw-err').textContent='',4000);
 }

@@ -165,43 +165,9 @@ const INTELLIGENCE = {
 };
 
 // ── PROMPT ────────────────────────────────────────────────────────────────
-function buildPrompt(name, role, company, context, mcpServices = null) {
-  const firstName = name.split(' ')[0];
-
-  // Pick relevant services from intelligence (match by industry/role keywords)
-  const roleLC = (role||'').toLowerCase();
-  const contextLC = (context||'').toLowerCase();
-  const companyLC = (company||'').toLowerCase();
-
-  // Score services by relevance to this prospect
-  const scored = INTELLIGENCE.services.map(s => {
-    let score = 0;
-    const ind = (s.industries||[]).map(i=>i.toLowerCase());
-    if (ind.includes('all')) score += 1;
-    if (ind.some(i => contextLC.includes(i) || companyLC.includes(i))) score += 3;
-    if (roleLC.includes('cio') || roleLC.includes('cto')) { if (['build','plan'].includes(s.phase)) score += 2; }
-    if (roleLC.includes('cfo') || roleLC.includes('finance')) { if (s.phase === 'plan' || s.name.toLowerCase().includes('finance')) score += 3; }
-    if (roleLC.includes('coo') || roleLC.includes('supply') || roleLC.includes('operations')) { if (s.name.toLowerCase().includes('demand') || s.name.toLowerCase().includes('supply') || s.name.toLowerCase().includes('process')) score += 3; }
-    if (roleLC.includes('cdo') || roleLC.includes('data')) { if (s.name.toLowerCase().includes('data') || s.name.toLowerCase().includes('golden')) score += 3; }
-    if (roleLC.includes('marketing') || roleLC.includes('cmo')) { if (s.phase === 'build' && (s.name.toLowerCase().includes('content') || s.name.toLowerCase().includes('marketing') || s.name.toLowerCase().includes('geo') || s.name.toLowerCase().includes('persona'))) score += 3; }
-    if (roleLC.includes('cco') || roleLC.includes('customer service') || roleLC.includes('service')) { if (s.name.toLowerCase().includes('omni') || s.name.toLowerCase().includes('chatbot') || s.name.toLowerCase().includes('dialogue')) score += 3; }
-    if (s.hot) score += 1;
-    return { ...s, score };
-  });
-
-  const topServices = scored.sort((a,b) => b.score - a.score).slice(0, 6);
-
-  // Pick relevant references
-  const topRefs = INTELLIGENCE.references.slice(0, 8);
-
-  // Use MCP data if available, fallback to intelligence
-  const serviceList = mcpServices || topServices;
-
-  const servicesStr = serviceList.map(s =>
-    `- ${s.name} (${s.phase.toUpperCase()}): ${s.tagline}${s.entry_metric ? ' | Result: '+s.entry_metric : ''}${s.owner && s.owner !== 'TBD' ? ' | Owner: '+s.owner : ''}`
-  ).join('\n');
-
-  // Filter out full-NDA references, anonymise name_only ones
+function buildPrompt(company, website) {
+  // valantic references for context — demonstrating implementation track record
+  const topRefs = INTELLIGENCE.references.slice(0, 6);
   const safeRefs = topRefs.filter(r => r.nda !== 'full').map(r => ({
     ...r,
     displayClient: r.nda === 'name_only' ? r.display : r.client
@@ -211,40 +177,80 @@ function buildPrompt(name, role, company, context, mcpServices = null) {
     `- ${r.displayClient} (${r.industry}): ${r.metric} — ${r.description}`
   ).join('\n');
 
-  return `You are a world-class B2B sales strategist at valantic.
-Create a personalised value story. Approaches = future (what we WOULD do). References = past proof. Keep them completely separate.
+  return `You are a world-class B2B sales strategist creating a Mapping Draft — a structured value narrative that maps a prospect's pains to Stripe capabilities and positions valantic as the expert implementation partner.
 
-## Contact: ${name}, ${role||'not specified'}, ${company}
-## Context: ${context||'not specified'}
+## Prospect Company
+- Name: ${company}
+- Website: ${website || 'not provided'}
 
-## valantic AI Services available for this prospect (choose the 2-3 most relevant):
-${servicesStr}
+## Your Task
+1. **Research the prospect** from company name + website using your training knowledge to infer:
+   - Industry, business model, size/scale
+   - Current payment infrastructure
+   - Recent strategic signals (news, growth, pivots)
 
-## valantic References (choose the 2-3 most relevant to this industry/role):
+2. **Identify 3-4 distinct prospect pains** that Stripe addresses:
+   - Cross-border growth & local payments
+   - Fraud, risk & compliance
+   - Billing, monetisation & business model fit
+   - Stack consolidation & integration
+   - (or others specific to this prospect)
+
+3. **Map each pain to Stripe capabilities:**
+   - Stripe Payments, Billing, Connect, Radar, Treasury, Issuing, Terminal, Identity, Stripe Tax, Financial Connections, Sigma, etc.
+
+4. **Position valantic as the implementation partner:**
+   - valantic is a leading European digital consulting firm with deep expertise in AI, data, and technology integration
+   - valantic has successfully delivered Stripe implementations for enterprises across industries
+   - valantic brings: industry expertise, technical architecture, compliance/security, post-go-live support
+
+## valantic Implementation Track Record
 ${refsStr}
 
-RULES:
-- greeting: Urgency signal = a business consequence, a window closing, a trend accelerating. NEVER name competitors. Max 15 words.
-- situation: 3-4 sentences. Describe the real tension this person faces in their role. Be specific, opinionated, human. No buzzwords, no generic AI hype.
-- approaches: FUTURE tense. Frame each as a specific action addressing their pain — NOT a service catalogue. Start with the business outcome or problem being solved. Only mention a valantic service name if it adds clarity. Keep it client-focused, not valantic-focused. Each approach must feel tailored to ${company}, not generic.
-- references: PAST tense ONLY. Use ONLY references where nda is false or "name_only". For "name_only" use the display name (anonymised). NEVER mention NDA clients by real name. Pick references from the same industry or most similar business challenge.
-- next_step: Concrete, specific. Mention valantic brings dedicated AI specialists for this domain. Anchor with a similar client result. Why now — one clear reason.
-- cta_label: 4-6 words, action-oriented, specific to their situation.
-
-Respond ONLY with valid JSON:
+## Output Format (Mapping Draft JSON)
 {
-  "greeting": "...",
-  "situation": "...",
-  "approaches": [{ "title": "Action verb + what, 5-7 words", "description": "2 sentences, future tense", "outcome": "Specific measurable result" }],
-  "references": [{ "number": "e.g. 40%", "description": "What was achieved. Past tense.", "client": "Client name" }],
-  "next_step": "2-3 sentences.",
-  "cta_label": "4-6 words"
+  "prospect_snapshot": {
+    "core_business": "Industry + primary service + markets served",
+    "size_scale": "Headcount estimate + revenue band + transaction volume",
+    "business_model": "B2B/B2C + pricing model + ACV or customer count",
+    "current_payment_stack": "Current PSP(s) + key integrations + tech notes",
+    "strategic_signals": "Recent news, hiring, funding, pivots, growth signals"
+  },
+  "pain_solution_blocks": [
+    {
+      "block_name": "e.g. Cross-border growth & local payments",
+      "prospect_situation": "1-2 sentences describing the pain in prospect's language",
+      "stripe_answer": "Which Stripe product(s) address this + how",
+      "fit": "High | Medium | Low (based on prospect data)",
+      "rationale": "Why this fit makes sense for THIS specific company",
+      "pitch_angle": "One-liner headline for the website section"
+    }
+  ],
+  "narrative": {
+    "headline_message": "One sentence: why Stripe + valantic, for this prospect, now",
+    "headline_highlight": "1-3 words from headline (exact substring to highlight)",
+    "top_3_priorities": ["block name A", "block name B", "block name C"],
+    "de_emphasize": ["block name D if any"]
+  },
+  "open_items": ["Clarifying question 1?", "Clarifying question 2?"],
+  "next_step": "2-3 sentences proposing concrete next steps",
+  "cta_label": "4-6 words, action-oriented"
 }
-2-3 approaches. 2-3 references.`;
+
+## Rules
+- Ground every claim in prospect data or training knowledge
+- If data is missing, flag it in open_items (don't invent)
+- Fit ratings: High = strong evidence + clear Stripe fit. Low = worth flagging but weaker fit
+- Never name competitors
+- Tone: opinionated, specific, human. No generic AI hype
+- 3-4 pain blocks total
+- open_items are internal clarifying questions for the sender, not seen by prospect`;
 }
 
 function buildHTML(data, input, contact) {
-  const firstName = input.name.split(' ')[0];
+  const company = input.company || 'Prospect';
+  const headline = data.narrative?.headline_message || 'Stripe Pitch';
+  const domain = company.toLowerCase().replace(/\s+/g,'').replace(/[^a-z0-9]/g,'') + '.com';
   const domain = input.company.toLowerCase().replace(/\s+/g,'').replace(/[^a-z0-9]/g,'') + '.com';
   const refs = data.references || [];
   const greetingClean = (data.greeting||'').replace(new RegExp('^'+firstName+'[,.]?\\s*','i'),'');
@@ -284,125 +290,35 @@ function buildHTML(data, input, contact) {
 
   const LOGO_W = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="232 216 1500 325" style="height:22px;width:auto;"><path fill="#FFFFFF" d="M1678,456.2c-7.8,14.8-24.3,23.9-43.6,23.9c-30,0-51.8-22.4-51.8-53.2s21.8-53.2,51.8-53.2c19.2,0,35.3,8.9,43.6,23.9l54-31.4c-19.3-33.1-56.2-53.6-96.8-53.6c-65.4,0-114.7,49.1-114.7,114.2S1569.8,541,1635.2,541c40.6,0,77.5-20.6,96.8-54L1678,456.2z"/><rect fill="#FFFFFF" x="1439" y="318.8" width="62" height="216.2"/><path fill="#FFFFFF" d="M1470,216.1c-20.4,0-37.6,17.6,37.6,37.6s17.2,37.6,37.6,37.6s37.6-17.2,37.6-37.6S1490.4,216.1,1470,216.1z"/><path fill="#FFFFFF" d="M1331.8,519.9c16.2,14.6,44.1,19.5,87.8,15.2v-55.9c-19.9,1.1-32.8,0.3-39.9-6.3c-3.7-3.5-5.5-8.3-5.5-14.8v-80h45.4v-59.4h-45.4v-75.9l-62,18.6v57.3H1277V378h35.2v80C1312.2,488.2,1318.4,507.8,1331.8,519.9z"/><path fill="#FFFFFF" d="M1163.4,374.6c23,0,41.7,18.7,41.7,41.7v118.6h62V402.1c0-49.4-40-89.5-89.4-89.5c-18.9,0-37.4,6-52.7,17.2l-3.3,2.4v-13.4h-62V535h62V416.3C1121.8,393.3,1140.4,374.6,1163.4,374.6z"/><path fill="#FFFFFF" d="M1029.2,534.9V318.8h-62v24.1l-3.6-4.1c-15-17.4-36.6-26.2-64.1-26.2c-27.5,0-53.4,11.7-72.8,32.9c-19.7,21.5-30.5,50.4-30.5,81.4s10.8,59.9,30.5,81.4c19.4,21.2,45.2,32.9,72.8,32.9c27.6,0,49-8.8,64.1-26.2l3.6-4.1V535L1029.2,534.9z M912.8,482.6c-32.6,0-54.5-22.4-54.5-55.8s21.9-55.8,54.5-55.8c32.6,0,54.5,22.4,54.5,55.8S945.3,482.6,912.8,482.6z"/><polygon fill="#FFFFFF" points="714.8,234.7 714.8,534.9 776.8,534.9 776.8,216.1"/><path fill="#FFFFFF" d="M684.3,534.9V318.8h-62v24.1l-3.6-4.1c-15.1-17.4-36.6-26.2-64.1-26.2c-27.5,0-53.4,11.7-72.8,32.9c-19.6,21.5-30.5,50.4-30.5,81.4s10.8,59.9,30.5,81.4c19.4,21.2,45.2,32.9,72.8,32.9c27.5,0,49-8.8,64.1-26.2l3.6-4.1V535L684.3,534.9z M567.8,482.6c-32.6,0-54.5-22.4-54.5-55.8s21.9-55.8,54.5-55.8c32.6,0,54.5,22.4,54.5,55.8S600.4,482.6,567.8,482.6z"/><polygon fill="#FFFFFF" points="395.3,318.8 348,463 300.7,318.8 232,318.8 312,534.9 384,534.9 464,318.8"/></svg>`;
 
-  const BLOB = `<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1015.91 1154.31" style="height:100%;width:auto;"><defs><linearGradient id="bg1" gradientUnits="userSpaceOnUse" x1="0" y1="577" x2="1016" y2="577"><stop offset="0" style="stop-color:#FF4B4B"/><stop offset="1" style="stop-color:#FF744F"/></linearGradient></defs><path fill="url(#bg1)" d="M812.3,47.5C694.8-31.8,530.7,12.9,415.6,89.7C300.5,166.5,185.4,276.2,113.2,408.8C41,541.4,11.7,697.8,47.6,840.1c35.9,142.3,136.9,270.4,266.7,316.2c129.8,45.8,288.3-0.6,407.4-82.1c119.1-81.5,199-197.8,264.9-318.7c65.9-120.9,117.8-246.4,121.9-374.2C1112.6,253.5,1059.3,156.1,975,99.5C933.8,71.3,875.2,53.8,812.3,47.5z"/></svg>`;
-
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>For ${input.name} · valantic</title>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stripe Pitch · ${company}</title>
 <link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/@phosphor-icons/web@2.1.2"></script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Maven Pro',sans-serif;background:#f5f3f0;color:#100c2a;-webkit-font-smoothing:antialiased;}
-/* ── consistent inner width across all sections ── */
-.inner{max-width:1100px;margin:0 auto;padding:0 56px;}
-nav{background:#100c2a;border-bottom:1px solid rgba(255,255,255,.07);position:sticky;top:0;z-index:50;}
-.nav-inner{max-width:1100px;margin:0 auto;padding:14px 56px;display:flex;justify-content:space-between;align-items:center;}
-.nc{font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:700;color:white;background:linear-gradient(135deg,#ff4b4b,#ff744f);padding:9px 22px;border-radius:99px;text-decoration:none;}
-.hero{position:relative;overflow:hidden;background:#100c2a;}
-.hero-inner{max-width:1100px;margin:0 auto;padding:64px 56px 72px;min-height:300px;display:flex;align-items:flex-end;position:relative;z-index:1;}
-.blob{position:absolute;top:-15%;right:max(-10%, calc(50% - 610px));height:115%;pointer-events:none;opacity:.9;mix-blend-mode:screen;}
-.hc{position:relative;z-index:1;max-width:860px;width:100%;}
-.wrap{max-width:1100px;margin:0 auto;padding:52px 56px 80px;}
-.lbl{font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#ff4b4b;margin-bottom:14px;}
-.wcard{background:white;border-radius:16px;padding:28px 32px;box-shadow:0 1px 6px rgba(0,0,0,.06);}
-.card-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
-.cta{display:inline-flex;align-items:center;gap:8px;padding:13px 26px;background:linear-gradient(135deg,#ff4b4b,#ff744f);color:white;font-family:'Maven Pro',sans-serif;font-weight:700;font-size:14px;border-radius:99px;text-decoration:none;transition:transform .15s,box-shadow .15s;}
-.cta:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(255,75,75,.35);}
-footer{background:#100c2a;}
-.footer-inner{max-width:1100px;margin:0 auto;padding:28px 56px;display:flex;justify-content:space-between;align-items:center;}
-.mob{display:none;position:fixed;bottom:0;left:0;right:0;z-index:99;background:white;border-top:1px solid #e5e2dc;padding:12px 16px;}
-/* ── reference cards ── */
-.rsp{border-radius:20px;background:#100c2a;padding:40px 44px;overflow:hidden;position:relative;}
-.ref-meta{display:flex;align-items:center;gap:10px;margin-bottom:20px;}
-.ref-num{font-size:clamp(36px,5vw,64px);font-weight:700;line-height:1;color:#ff4b4b;margin-bottom:14px;word-break:break-word;max-width:100%;}
-.ref-desc{font-size:15px;color:rgba(255,255,255,.72);line-height:1.65;}
-.ref-ghost{position:absolute;right:-10px;bottom:-20px;font-size:140px;font-weight:700;color:rgba(255,255,255,.02);line-height:1;pointer-events:none;user-select:none;overflow:hidden;max-width:60%;}
-@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
-.sr{opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .6s ease;}
-.sr.v{opacity:1;transform:none;}
-@media(max-width:900px){.card-grid{grid-template-columns:repeat(2,1fr);}}
-@media(max-width:700px){.nav-inner,.hero-inner,.wrap,.footer-inner{padding-left:20px;padding-right:20px;}.rsp{padding:28px 24px;}.card-grid{grid-template-columns:1fr;}.mob{display:block;}body{padding-bottom:68px;}}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Maven Pro', sans-serif; background: #100c2a; color: white; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.container { max-width: 600px; text-align: center; }
+h1 { font-size: 48px; margin-bottom: 16px; background: linear-gradient(135deg, #ff4b4b, #ff744f); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+p { font-size: 18px; color: rgba(255,255,255,0.8); line-height: 1.6; margin-bottom: 32px; }
+.company { font-size: 28px; font-weight: 700; margin-bottom: 24px; }
+.contact { background: rgba(255,255,255,0.06); border-radius: 16px; padding: 24px; margin-top: 40px; }
+.contact-name { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+.contact-email { font-size: 14px; color: #ff4b4b; text-decoration: none; }
 </style>
 </head>
 <body>
-<nav>
-  <div class="nav-inner">
-    ${LOGO_W}
-    <div style="display:flex;align-items:center;gap:12px;">
-      <img src="https://logo.clearbit.com/${domain}" style="height:18px;opacity:.4;filter:brightness(10);" onerror="this.style.display='none'" alt="">
-      <a href="mailto:${contact.email}?subject=Re: valantic for ${input.company}" class="nc">Get in touch</a>
-    </div>
-  </div>
-</nav>
-<section class="hero">
-  <div class="blob">${BLOB}</div>
-  <div class="hero-inner">
-  <div class="hc">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:22px;opacity:0;animation:fadeUp .5s .1s ease forwards;">
-      <span style="font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.35);">${input.name}</span>
-      <span style="width:3px;height:3px;border-radius:50%;background:rgba(255,255,255,.2);"></span>
-      <span style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.35);">${input.company}</span>
-    </div>
-    <div style="font-size:clamp(28px,4vw,52px);font-weight:700;line-height:1.18;max-width:840px;opacity:0;animation:fadeUp .6s .3s ease forwards;">
-      <span id="tw" style="color:white;"></span><span id="twn" style="display:none;background:linear-gradient(135deg,#ff4b4b,#ff744f);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">${firstName},</span><span id="twr" style="color:white;display:none;"> ${greetingClean}</span><span id="twc" style="color:#ff4b4b;animation:blink 1s step-end infinite;display:none;">|</span>
-    </div>
-  </div>
-  </div>
-</section>
-<div style="background:#f5f3f0;">
-<div class="wrap">
-  <div class="sr" style="margin-bottom:44px;"><div class="lbl">Your situation</div><div class="wcard"><p style="font-size:16px;line-height:1.85;color:#2a2a2a;">${data.situation||''}</p></div></div>
-  <div class="sr" style="margin-bottom:44px;"><div class="lbl">What we'd do for ${input.company}</div><div class="card-grid">${approachCards}</div></div>
-  ${refs.length?`<div class="sr" style="margin-bottom:44px;"><div class="lbl">Proven results</div>${refSpotlight}</div>`:''}
-  <div class="sr" style="margin-bottom:32px;"><div class="lbl">Here's what I'd suggest</div>
-    <div class="wcard">
-      <p style="font-size:15px;color:#444;line-height:1.75;margin-bottom:22px;">${data.next_step||''}</p>
-      <a href="mailto:${contact.email}?subject=Re: valantic for ${input.company}&body=Hi ${contact.name.split(' ')[0]}," class="cta"><i class="ph ph-calendar-check" style="font-size:15px;"></i> ${data.cta_label||'Book 30 minutes'}</a>
-      <div style="font-size:11px;color:#bbb;margin-top:10px;">No deck. No pitch. Just a conversation.</div>
-    </div>
-  </div>
-  <div class="sr wcard" style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
-    ${avatar}
-    <div style="flex:1;min-width:180px;">
-      <div style="font-size:17px;font-weight:700;color:#100c2a;margin-bottom:3px;">${contact.name}</div>
-      <div style="font-size:13px;color:#888;margin-bottom:8px;">${contact.role}</div>
-      <a href="mailto:${contact.email}" style="font-size:14px;color:#ff4b4b;font-weight:600;text-decoration:none;">${contact.email}</a>
-    </div>
-    <a href="mailto:${contact.email}" style="display:inline-flex;align-items:center;gap:7px;padding:10px 20px;background:#f5f3f0;color:#100c2a;font-family:'Maven Pro',sans-serif;font-weight:700;font-size:13px;border-radius:99px;text-decoration:none;"><i class="ph ph-envelope" style="font-size:14px;"></i> Send a message</a>
+<div class="container">
+  <div class="company">${company}</div>
+  <h1>${headline}</h1>
+  <p>Ihr personalisierter Stripe Pitch wird gerade generiert...</p>
+  <div class="contact">
+    <div class="contact-name">${contact.name}</div>
+    <div style="font-size: 13px; color: rgba(255,255,255,0.6); margin-bottom: 12px;">${contact.role}</div>
+    <a href="mailto:${contact.email}" class="contact-email">${contact.email}</a>
   </div>
 </div>
-</div>
-<footer><div class="footer-inner">${LOGO_W}<span style="font-size:12px;color:rgba(255,255,255,.25);">valantic.ai</span></div></footer>
-<div class="mob"><a href="mailto:${contact.email}" class="cta" style="width:100%;justify-content:center;"><i class="ph ph-calendar-check" style="font-size:15px;"></i> ${data.cta_label||'Book 30 minutes'}</a></div>
-<script>
-// Typewriter on full headline — delay start to avoid flash
-const full='${(firstName+', '+greetingClean).replace(/'/g,"\\'")}',nl=${nameLen};
-let ni=0;const tw=document.getElementById('tw'),twn=document.getElementById('twn'),twr=document.getElementById('twr'),twc=document.getElementById('twc');
-setTimeout(()=>{
-  if(twc)twc.style.display='inline';
-  const ti=setInterval(()=>{
-    if(ni<=full.length){
-      if(ni<=nl){if(tw)tw.textContent=full.slice(0,ni);}
-      else{if(tw)tw.style.display='none';if(twn)twn.style.display='inline';if(twr){twr.style.display='inline';twr.textContent=' '+full.slice(nl+1,ni);}}
-      ni++;
-    }else{clearInterval(ti);if(twc)twc.style.display='none';}
-  },45);
-},400);
-// Spotlight auto-advance
-const rl=${JSON.stringify(refs.length)};let ri=0,rt;
-function sg(i){ri=i;clearInterval(rt);if(rl>1)rt=setInterval(()=>sg((ri+1)%rl),8000);
-  document.querySelectorAll('.rsp').forEach((e,j)=>e.style.display=j===i?'block':'none');
-  for(let j=0;j<rl;j++){const b=document.getElementById('rb-'+j);if(b){b.style.width=j===i?'24px':'8px';b.style.background=j===i?'#ff4b4b':'#ccc';}}
-  const c=document.getElementById('rsc');if(c)c.textContent=(i+1)+' / '+rl;}
-if(rl>1)rt=setInterval(()=>sg((ri+1)%rl),8000);
-// Scroll reveal
-const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('v');obs.unobserve(e.target);}});},{threshold:.08});
-document.querySelectorAll('.sr').forEach(el=>obs.observe(el));
-</script>
 </body>
 </html>`;
 }
@@ -469,22 +385,20 @@ export default async function handler(req, res) {
   // ── POST /api/generate ────────────────────────────────────────────────
   if(req.method!=='POST') return res.status(405).json({error:'Method not allowed'});
   if(req.headers['x-valantic-secret']!==SHARED_SECRET) return res.status(401).json({error:'Unauthorized'});
-  const {name,company,role,context,industry,contact}=req.body||{};
-  if(!name||!company) return res.status(400).json({error:'name and company required'});
-  const contactInfo={name:contact?.name||'Maike Saager',role:contact?.role||'Head of Growth Platform AI Hub, valantic',email:contact?.email||'maike.saager@valantic.com',photo:contact?.photo||null,initials:(contact?.name||'Maike Saager').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()};
+  const {company,website,contact}=req.body||{};
+  if(!company||!website) return res.status(400).json({error:'company and website required'});
+  const contactInfo={name:contact?.name||'Joshua Marckwordt',role:contact?.role||'Account Manager, valantic',email:contact?.email||'joshua.marckwordt@nxt.valantic.com',photo:contact?.photo||null,initials:(contact?.name||'Joshua Marckwordt').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()};
   try {
-    const mcpServices = await fetchMCPServices(company, industry||'', role||'');
-    const msg=await client.messages.create({model:'claude-sonnet-4-5',max_tokens:1500,messages:[{role:'user',content:buildPrompt(name,role,company,context,mcpServices)}]});
+    const msg=await client.messages.create({model:'claude-sonnet-4-5',max_tokens:2000,messages:[{role:'user',content:buildPrompt(company,website)}]});
     const text=msg.content.map(b=>b.text||'').join('');
     const story=JSON.parse(text.replace(/^```json\s*/i,'').replace(/```\s*$/i,'').trim());
-    const prefix=`${name.split(' ')[0].toLowerCase()}-${company.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')}`;
-    const slug=`${prefix}-${uuidv4().slice(0,8)}`;
-    const html=buildHTML(story,{name,company,role},contactInfo);
-    const trackingPixel = `<img src="https://valantic-pitch-api.vercel.app/api/open/${slug}" width="1" height="1" style="position:absolute;opacity:0;pointer-events:none;" alt="">`;
+    const slug=`${company.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')}-${uuidv4().slice(0,8)}`;
+    const html=buildHTML(story,{company,website},contactInfo);
+    const trackingPixel = `<img src="https://stripe-pitcherapparat.vercel.app/api/open/${slug}" width="1" height="1" style="position:absolute;opacity:0;pointer-events:none;" alt="">`;
     const htmlWithTracking = html.replace('</body>', trackingPixel + '</body>');
     const blob=await put(`pitches/${slug}.html`,htmlWithTracking,{access:'public',contentType:'text/html; charset=utf-8',addRandomSuffix:false});
     await put(`index/${slug}.json`,JSON.stringify({
-      slug, name, company, role,
+      slug, company, website,
       sender: contactInfo.name,
       senderEmail: contactInfo.email,
       created: new Date().toISOString(),
