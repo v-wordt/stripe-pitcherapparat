@@ -250,45 +250,6 @@ ${refsStr}
 function buildHTML(data, input, contact) {
   const company = input.company || 'Prospect';
   const headline = data.narrative?.headline_message || 'Stripe Pitch';
-  const domain = company.toLowerCase().replace(/\s+/g,'').replace(/[^a-z0-9]/g,'') + '.com';
-  const domain = input.company.toLowerCase().replace(/\s+/g,'').replace(/[^a-z0-9]/g,'') + '.com';
-  const refs = data.references || [];
-  const greetingClean = (data.greeting||'').replace(new RegExp('^'+firstName+'[,.]?\\s*','i'),'');
-  const fullHeadline = firstName + ', ' + greetingClean;
-  const nameLen = (firstName + ',').length;
-
-  const approachCards = (data.approaches||[]).map((a,i) => `
-    <div style="background:white;border-radius:16px;padding:28px;box-shadow:0 1px 6px rgba(0,0,0,.06);display:flex;flex-direction:column;transition:transform .2s,box-shadow .2s;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,.1)'" onmouseout="this.style.transform='';this.style.boxShadow='0 1px 6px rgba(0,0,0,.06)'">
-      <div style="font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#ff4b4b;margin-bottom:12px;">0${i+1}</div>
-      <div style="font-size:15px;font-weight:700;color:#100c2a;margin-bottom:10px;line-height:1.35;">${a.title}</div>
-      <div style="font-size:14px;color:#555;line-height:1.7;flex:1;">${a.description}</div>
-      ${a.outcome?`<div style="font-size:12px;font-weight:600;color:#193773;border-top:1px solid #f0eeee;padding-top:12px;margin-top:12px;">→ ${a.outcome}</div>`:''}
-    </div>`).join('');
-
-  const refSpotlight = refs.length ? `
-    <div style="position:relative;">
-      ${refs.map((r,i)=>`
-      <div class="rsp" style="display:${i===0?'block':'none'};">
-        <div class="ref-meta">
-          ${!r.client.startsWith('NDA')&&r.nda!=='full'?`<img src="https://logo.clearbit.com/${(r.client||'').toLowerCase().replace(/[^a-z0-9]/g,'')}.com" style="height:15px;width:auto;opacity:.3;filter:brightness(10);" onerror="this.style.display='none'" alt="">`:''}
-          <span style="font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.28);">${r.client.startsWith('NDA')||r.nda==='full'?r.display:r.client}</span>
-          <span style="font-size:10px;color:rgba(255,255,255,.15);">· ${r.industry||''}</span>
-        </div>
-        <div class="ref-num">${r.number}</div>
-        <div class="ref-desc">${r.description}</div>
-        <div class="ref-ghost">${r.number}</div>
-      </div>`).join('')}
-      ${refs.length>1?`<div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;">
-        <div style="display:flex;gap:7px;">${refs.map((_,i)=>`<button onclick="sg(${i})" style="width:${i===0?'24':'8'}px;height:8px;border-radius:4px;border:none;background:${i===0?'#ff4b4b':'#ccc'};cursor:pointer;transition:all .25s;padding:0;" id="rb-${i}"></button>`).join('')}</div>
-        <span id="rsc" style="font-size:12px;font-weight:600;color:#aaa;">1 / ${refs.length}</span>
-      </div>`:''}
-    </div>` : '';
-
-  const avatar = contact.photo
-    ? `<img src="${contact.photo}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;flex-shrink:0;">`
-    : `<div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#ff4b4b,#ff744f);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:white;flex-shrink:0;">${contact.initials||'VS'}</div>`;
-
-  const LOGO_W = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="232 216 1500 325" style="height:22px;width:auto;"><path fill="#FFFFFF" d="M1678,456.2c-7.8,14.8-24.3,23.9-43.6,23.9c-30,0-51.8-22.4-51.8-53.2s21.8-53.2,51.8-53.2c19.2,0,35.3,8.9,43.6,23.9l54-31.4c-19.3-33.1-56.2-53.6-96.8-53.6c-65.4,0-114.7,49.1-114.7,114.2S1569.8,541,1635.2,541c40.6,0,77.5-20.6,96.8-54L1678,456.2z"/><rect fill="#FFFFFF" x="1439" y="318.8" width="62" height="216.2"/><path fill="#FFFFFF" d="M1470,216.1c-20.4,0-37.6,17.6,37.6,37.6s17.2,37.6,37.6,37.6s37.6-17.2,37.6-37.6S1490.4,216.1,1470,216.1z"/><path fill="#FFFFFF" d="M1331.8,519.9c16.2,14.6,44.1,19.5,87.8,15.2v-55.9c-19.9,1.1-32.8,0.3-39.9-6.3c-3.7-3.5-5.5-8.3-5.5-14.8v-80h45.4v-59.4h-45.4v-75.9l-62,18.6v57.3H1277V378h35.2v80C1312.2,488.2,1318.4,507.8,1331.8,519.9z"/><path fill="#FFFFFF" d="M1163.4,374.6c23,0,41.7,18.7,41.7,41.7v118.6h62V402.1c0-49.4-40-89.5-89.4-89.5c-18.9,0-37.4,6-52.7,17.2l-3.3,2.4v-13.4h-62V535h62V416.3C1121.8,393.3,1140.4,374.6,1163.4,374.6z"/><path fill="#FFFFFF" d="M1029.2,534.9V318.8h-62v24.1l-3.6-4.1c-15-17.4-36.6-26.2-64.1-26.2c-27.5,0-53.4,11.7-72.8,32.9c-19.7,21.5-30.5,50.4-30.5,81.4s10.8,59.9,30.5,81.4c19.4,21.2,45.2,32.9,72.8,32.9c27.6,0,49-8.8,64.1-26.2l3.6-4.1V535L1029.2,534.9z M912.8,482.6c-32.6,0-54.5-22.4-54.5-55.8s21.9-55.8,54.5-55.8c32.6,0,54.5,22.4,54.5,55.8S945.3,482.6,912.8,482.6z"/><polygon fill="#FFFFFF" points="714.8,234.7 714.8,534.9 776.8,534.9 776.8,216.1"/><path fill="#FFFFFF" d="M684.3,534.9V318.8h-62v24.1l-3.6-4.1c-15.1-17.4-36.6-26.2-64.1-26.2c-27.5,0-53.4,11.7-72.8,32.9c-19.6,21.5-30.5,50.4-30.5,81.4s10.8,59.9,30.5,81.4c19.4,21.2,45.2,32.9,72.8,32.9c27.5,0,49-8.8,64.1-26.2l3.6-4.1V535L684.3,534.9z M567.8,482.6c-32.6,0-54.5-22.4-54.5-55.8s21.9-55.8,54.5-55.8c32.6,0,54.5,22.4,54.5,55.8S600.4,482.6,567.8,482.6z"/><polygon fill="#FFFFFF" points="395.3,318.8 348,463 300.7,318.8 232,318.8 312,534.9 384,534.9 464,318.8"/></svg>`;
 
   return `<!DOCTYPE html>
 <html lang="en">
