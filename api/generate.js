@@ -350,7 +350,7 @@ export default async function handler(req, res) {
   if(!company||!website) return res.status(400).json({error:'company and website required'});
   const contactInfo={name:contact?.name||'Joshua Marckwordt',role:contact?.role||'Account Manager, valantic',email:contact?.email||'joshua.marckwordt@nxt.valantic.com',photo:contact?.photo||null,initials:(contact?.name||'Joshua Marckwordt').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()};
   try {
-    const msg=await client.messages.create({model:'claude-haiku-4-5-20251001',max_tokens:1500,messages:[{role:'user',content:buildPrompt(company,website)}]});
+    const msg=await client.messages.create({model:'claude-haiku-4-5-20251001',max_tokens:3000,messages:[{role:'user',content:buildPrompt(company,website)}]});
     const text=msg.content.map(b=>b.text||'').join('');
     const story=JSON.parse(text.replace(/^```json\s*/i,'').replace(/```\s*$/i,'').trim());
     const slug=`${company.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')}-${uuidv4().slice(0,8)}`;
