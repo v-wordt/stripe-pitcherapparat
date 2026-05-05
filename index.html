@@ -1832,6 +1832,7 @@ function renderProspectProfile() {
   html += '</table>';
   area.innerHTML = html;
   document.getElementById('profile-next-btn').disabled = false;
+  document.querySelector('#prospect-profile-screen .research-iterations').textContent = `${_profileIterations} / 5 Überarbeitungen`;
   renderProfileChat();
 }
 
@@ -1947,6 +1948,13 @@ function renderMappingDraft() {
 
   area.innerHTML = html;
   document.getElementById('mapping-build-btn').disabled = false;
+
+  // Update iteration counter on mapping-draft-screen
+  const mappingIterationEl = document.querySelector('#mapping-draft-screen .research-iterations');
+  if (mappingIterationEl) {
+    mappingIterationEl.textContent = `${_mappingIterations} / 5 Überarbeitungen`;
+  }
+
   renderMappingChat();
 }
 
