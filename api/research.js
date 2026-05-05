@@ -27,24 +27,70 @@ async function fetchProfileFields() {
   return fields;
 }
 
-function buildResearchPrompt(company, website, fields, websiteContent) {
+// Jina Reader: renders JavaScript, returns clean readable text from any URL
+async function fetchWithJina(url) {
+  try {
+    const jinaUrl = `https://r.jina.ai/${url}`;
+    const res = await fetch(jinaUrl, {
+      headers: { 'Accept': 'text/plain', 'X-No-Cache': 'true' },
+      signal: AbortSignal.timeout(15000)
+    });
+    if (!res.ok) return null;
+    const text = await res.text();
+    return text.slice(0, 6000);
+  } catch {
+    return null;
+  }
+}
+
+// Jina Search: real web search, returns top results as text
+async function searchWithJina(query) {
+  try {
+    const jinaUrl = `https://s.jina.ai/${encodeURIComponent(query)}`;
+    const res = await fetch(jinaUrl, {
+      headers: { 'Accept': 'text/plain' },
+      signal: AbortSignal.timeout(15000)
+    });
+    if (!res.ok) return null;
+    const text = await res.text();
+    return text.slice(0, 4000);
+  } catch {
+    return null;
+  }
+}
+
+// Legacy fallback: raw HTML strip (used for user-provided URLs in refinement)
+async function fetchAndCleanURL(url) {
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    const html = await res.text();
+    const text = html
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 3000);
+    return text;
+  } catch {
+    return null;
+  }
+}
+
+function buildResearchPrompt(company, website, fields, websiteContent, searchContent) {
   const fieldStr = fields
     .map(f => `- ${f.field}`)
     .join('\n');
 
-  return `You are a prospect researcher. Research the company and fill in all fields below using the website content provided and training knowledge.
+  return `You are a B2B prospect researcher. Your job is to fill in a company profile using all available sources below.
 
 Company: ${company}
 Website: ${website}
 
-${websiteContent ? `Website content (scraped):\n${websiteContent}\n` : 'Note: Could not fetch website content.'}
+${websiteContent ? `--- WEBSITE CONTENT ---\n${websiteContent}\n` : ''}
+${searchContent ? `--- WEB SEARCH RESULTS ---\n${searchContent}\n` : ''}
 
-For each field, provide EITHER:
-1. A factual value based on the website content or public information
-2. "Nicht öffentlich verfügbar" + a one-line assumption explaining your estimate
+Fill in every field using the sources above. For fields not covered in the sources, use your training knowledge to provide a reasonable estimate. Only write "Nicht öffentlich verfügbar" when you have truly no basis to estimate — this should be rare.
 
-Fields to research (grouped by category):
-
+Fields to fill (grouped by category):
 ${fieldStr}
 
 Output ONLY valid JSON, no explanation. Use this exact structure:
@@ -63,10 +109,10 @@ Output ONLY valid JSON, no explanation. Use this exact structure:
 }
 
 Rules:
-- If data is not publicly available, write "Nicht öffentlich verfügbar" as the value and set assumption:true
-- Include assumptionNote ONLY when assumption:true (brief explanation of your estimate)
+- Prefer factual values from the website and search results
+- For estimates: set assumption:true and write a short assumptionNote explaining the basis
+- Only use "Nicht öffentlich verfügbar" when truly unknown with no basis to estimate
 - Be concise: max 1-2 sentences per field value
-- No invented metrics
 `;
 }
 
@@ -93,21 +139,6 @@ Example response:
 }
 
 Do NOT include unchanged fields. Return only changed ones.`;
-}
-
-async function fetchAndCleanURL(url) {
-  try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
-    const html = await res.text();
-    const text = html
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .slice(0, 3000);
-    return text;
-  } catch {
-    return null;
-  }
 }
 
 function mergeProfiles(current, updates) {
@@ -138,10 +169,10 @@ export default async function handler(req, res) {
     const isRefine = profile !== undefined && message !== undefined;
 
     if (isRefine) {
-      // Refinement flow
+      // Refinement flow — use legacy fetch for user-provided URLs
       let fetchedContent = null;
       if (url) {
-        fetchedContent = await fetchAndCleanURL(url);
+        fetchedContent = await fetchWithJina(url) || await fetchAndCleanURL(url);
       }
 
       const prompt = buildRefinementPrompt(profile, message, fetchedContent);
@@ -162,24 +193,25 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'company and website required' });
       }
 
-      // Fetch Google Sheets fields and website content in parallel
-      const [fields, websiteContent] = await Promise.all([
+      // Fetch profile fields, website content via Jina Reader, and web search results — all in parallel
+      const [fields, websiteContent, searchContent] = await Promise.all([
         fetchProfileFields(),
-        fetchAndCleanURL(website)
+        fetchWithJina(website),
+        searchWithJina(`${company} Adresse Umsatz Mitarbeiter Produkte Services`)
       ]);
 
-      const prompt = buildResearchPrompt(company, website, fields, websiteContent);
+      const prompt = buildResearchPrompt(company, website, fields, websiteContent, searchContent);
 
       const msg = await client.messages.create({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 3000,
+        max_tokens: 4096,
         messages: [{ role: 'user', content: prompt }]
       });
 
       const text = msg.content[0].text || '';
-      const profile = JSON.parse(text.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim());
+      const researchedProfile = JSON.parse(text.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim());
 
-      return res.status(200).json({ profile });
+      return res.status(200).json({ profile: researchedProfile });
     }
   } catch (err) {
     console.error('Research error:', err);
