@@ -822,6 +822,40 @@
       font-weight: 600;
     }
 
+    .profile-value-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .profile-value-row > div:first-child { flex: 1; min-width: 0; }
+
+    .confidence-pill {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .confidence-pill.high   { background: rgba(74, 222, 128, 0.18); color: #4ade80; }
+    .confidence-pill.medium { background: rgba(251, 191, 36, 0.18); color: #fbbf24; }
+    .confidence-pill.low    { background: rgba(255,255,255,0.10); color: rgba(255,255,255,0.55); }
+
+    .profile-source {
+      font-size: 11px;
+      margin-top: 2px;
+      color: rgba(255,255,255,0.5);
+    }
+    .profile-source a {
+      color: rgba(255,255,255,0.7);
+      text-decoration: underline;
+      text-decoration-color: rgba(255,255,255,0.25);
+    }
+    .profile-source a:hover { color: white; }
+
     .mapping-cards {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -1834,16 +1868,23 @@ function renderProspectProfile() {
 
   let html = '<table class="profile-table">';
   for (const [category, fields] of Object.entries(_currentProfile)) {
-    html += `<tr><td colspan="2" class="profile-category">${category}</td></tr>`;
+    html += `<tr><td colspan="2" class="profile-category">${escapeHtml(category)}</td></tr>`;
     for (const [fieldName, fieldData] of Object.entries(fields)) {
       const value = fieldData?.value || '';
       const assumption = fieldData?.assumption || false;
       const assumptionNote = fieldData?.assumptionNote || '';
+      const confidence = (fieldData?.confidence || 'low').toLowerCase();
+      const source = fieldData?.source || null;
+      const validConfidence = ['high', 'medium', 'low'].includes(confidence) ? confidence : 'low';
       html += `<tr>
-        <td class="profile-field-label">${fieldName}</td>
+        <td class="profile-field-label">${escapeHtml(fieldName)}</td>
         <td class="profile-field-value">
-          <div>${value}</div>
-          ${assumption ? `<div class="profile-assumption">Annahme: ${assumptionNote}</div>` : ''}
+          <div class="profile-value-row">
+            <div>${escapeHtml(value)}</div>
+            <span class="confidence-pill ${validConfidence}">${validConfidence}</span>
+          </div>
+          ${assumption ? `<div class="profile-assumption">Annahme: ${escapeHtml(assumptionNote)}</div>` : ''}
+          ${renderSource(source)}
         </td>
       </tr>`;
     }
@@ -2057,10 +2098,24 @@ async function buildPitch() {
 }
 
 function escapeHtml(text) {
-  if (!text) return '';
+  if (text === null || text === undefined) return '';
   const div = document.createElement('div');
-  div.textContent = text;
+  div.textContent = String(text);
   return div.innerHTML;
+}
+
+function renderSource(source) {
+  if (!source) return '';
+  const s = String(source);
+  if (/^https?:\/\//i.test(s)) {
+    return `<div class="profile-source">Quelle: <a href="${escapeHtml(s)}" target="_blank" rel="noopener noreferrer">${escapeHtml(s.replace(/^https?:\/\//, '').slice(0, 60))}</a></div>`;
+  }
+  if (s.startsWith('web_search:')) {
+    return `<div class="profile-source">Quelle: Websuche „${escapeHtml(s.slice('web_search:'.length))}"</div>`;
+  }
+  if (s === 'estimate') return `<div class="profile-source">Quelle: Schätzung aus Signalen</div>`;
+  if (s === 'training_knowledge') return `<div class="profile-source">Quelle: Modellwissen</div>`;
+  return `<div class="profile-source">Quelle: ${escapeHtml(s)}</div>`;
 }
 
 document.getElementById('input-screen').style.display = 'flex';
