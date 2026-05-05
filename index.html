@@ -948,6 +948,7 @@ async function generatePitch() {
         body: JSON.stringify({ company, website, contact: profile }),
       });
       clearInterval(msgInterval);
+      if (res.status === 401) { handleAuthError(); return; }
       if (!res.ok) throw new Error(`Backend ${res.status}: ${await res.text()}`);
       const data = await res.json();
       result = data.story;
