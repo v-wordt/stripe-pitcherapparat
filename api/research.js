@@ -27,18 +27,20 @@ async function fetchProfileFields() {
   return fields;
 }
 
-function buildResearchPrompt(company, website, fields) {
+function buildResearchPrompt(company, website, fields, websiteContent) {
   const fieldStr = fields
     .map(f => `- ${f.field}`)
     .join('\n');
 
-  return `You are a prospect researcher. Research the company and fill in all fields below using training knowledge about the company + their website.
+  return `You are a prospect researcher. Research the company and fill in all fields below using the website content provided and training knowledge.
 
 Company: ${company}
 Website: ${website}
 
+${websiteContent ? `Website content (scraped):\n${websiteContent}\n` : 'Note: Could not fetch website content.'}
+
 For each field, provide EITHER:
-1. A factual value based on public information
+1. A factual value based on the website content or public information
 2. "Nicht öffentlich verfügbar" + a one-line assumption explaining your estimate
 
 Fields to research (grouped by category):
@@ -160,8 +162,13 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'company and website required' });
       }
 
-      const fields = await fetchProfileFields();
-      const prompt = buildResearchPrompt(company, website, fields);
+      // Fetch Google Sheets fields and website content in parallel
+      const [fields, websiteContent] = await Promise.all([
+        fetchProfileFields(),
+        fetchAndCleanURL(website)
+      ]);
+
+      const prompt = buildResearchPrompt(company, website, fields, websiteContent);
 
       const msg = await client.messages.create({
         model: 'claude-haiku-4-5-20251001',
