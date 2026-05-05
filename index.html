@@ -1047,49 +1047,56 @@ function _rebuildOutput() {
   const input = _currentInput;
   const profile = loadProfile();
   const screen = document.getElementById('output-screen');
-  const firstName = (input.name || '').split(' ')[0];
 
-  const rawGreeting = data.greeting || data.tagline || '';
-  const greetingText = rawGreeting.replace(new RegExp('^' + firstName + '[,.]?\\s*', 'i'), '');
-  const fullHeadline = firstName + ', ' + greetingText;
+  const headline = (data.narrative && data.narrative.headline_message) || input.company;
+  const highlight = (data.narrative && data.narrative.headline_highlight) || '';
+  const snapshot = data.prospect_snapshot || {};
+  const blocks = data.pain_solution_blocks || [];
 
-  const approachCards = (data.approaches || data.what_we_gain || []).map((a, i) => `
-    <div style="background:white;border-radius:16px;padding:28px;box-shadow:0 1px 6px rgba(0,0,0,.06);display:flex;flex-direction:column;gap:0;transition:transform .2s,box-shadow .2s;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,.1)'" onmouseout="this.style.transform='';this.style.boxShadow='0 1px 6px rgba(0,0,0,.06)'">
-      <div style="font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#ff4b4b;margin-bottom:12px;">0${i+1}</div>
-      <div style="font-size:15px;font-weight:700;color:#100c2a;margin-bottom:10px;line-height:1.35;">${a.title}</div>
-      <div style="font-size:14px;color:#555;line-height:1.7;flex:1;">${a.description}</div>
-      ${(a.outcome||a.proof)?`<div style="font-size:12px;font-weight:600;color:#193773;border-top:1px solid #f0eeee;padding-top:12px;margin-top:12px;">→ ${a.outcome||a.proof}</div>`:''}
+  // Escape special regex chars in highlight string
+  const escapedHL = highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const highlightedHeadline = highlight
+    ? headline.replace(new RegExp('(' + escapedHL + ')', 'i'),
+        '<span style="background:linear-gradient(135deg,#ff4b4b,#ff744f);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">$1</span>')
+    : '<span style="color:white;">' + headline + '</span>';
+
+  const fitColor = { High: '#22c55e', Medium: '#f59e0b', Low: '#94a3b8' };
+
+  const blockCards = blocks.map((b, i) => `
+    <div style="background:white;border-radius:16px;padding:28px;box-shadow:0 1px 6px rgba(0,0,0,.06);display:flex;flex-direction:column;transition:transform .2s,box-shadow .2s;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,.1)'" onmouseout="this.style.transform='';this.style.boxShadow='0 1px 6px rgba(0,0,0,.06)'">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#ff4b4b;">0${i+1}</div>
+        <span style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:white;background:${fitColor[b.fit]||'#94a3b8'};padding:3px 9px;border-radius:99px;">${b.fit || 'N/A'}</span>
+      </div>
+      <div style="font-size:15px;font-weight:700;color:#100c2a;margin-bottom:8px;line-height:1.35;">${b.block_name}</div>
+      <div style="font-size:13px;color:#888;font-style:italic;margin-bottom:12px;line-height:1.6;">"${b.prospect_situation}"</div>
+      <div style="font-size:14px;color:#555;line-height:1.7;flex:1;margin-bottom:12px;"><strong style="color:#100c2a;">Stripe: </strong>${b.stripe_answer}</div>
+      <div style="font-size:12px;font-weight:600;color:#193773;border-top:1px solid #f0eeee;padding-top:12px;margin-top:auto;">→ ${b.pitch_angle}</div>
     </div>`).join('');
 
-  const refs = data.references && data.references.length ? data.references
-    : data.big_result ? [data.big_result] : [];
+  const snapshotFields = [
+    { label: 'Business', value: snapshot.core_business },
+    { label: 'Scale', value: snapshot.size_scale },
+    { label: 'Model', value: snapshot.business_model },
+    { label: 'Payments', value: snapshot.current_payment_stack },
+    { label: 'Signals', value: snapshot.strategic_signals },
+  ];
+  const snapshotRows = snapshotFields.filter(r => r.value).map((r, i, arr) => `
+    <div style="display:flex;gap:12px;padding:12px 0;${i < arr.length-1 ? 'border-bottom:1px solid #f0eeee;' : ''}">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#ff4b4b;width:68px;flex-shrink:0;padding-top:3px;">${r.label}</div>
+      <div style="font-size:14px;color:#333;line-height:1.55;">${r.value}</div>
+    </div>`).join('');
 
-  // Spotlight: one big ref at a time, auto-advances
-  const refSpotlight = refs.length ? `
-    <div style="position:relative;">
-      ${refs.map((r, i) => `
-        <div class="ref-spot" style="display:${i===0?'block':'none'};background:#100c2a;border-radius:20px;padding:52px 56px;position:relative;overflow:hidden;min-height:280px;">
-          <!-- Logo + client row -->
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:28px;">
-            <img src="https://logo.clearbit.com/${(r.client||'').toLowerCase().replace(/[^a-z0-9]/g,'')}.com" style="height:18px;width:auto;opacity:.45;filter:brightness(10);" onerror="this.style.display='none'" alt="">
-            <span style="font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.35);">${r.client}</span>
-          </div>
-          <!-- Big layout: number + text side by side -->
-          <div style="display:grid;grid-template-columns:auto 1fr;gap:48px;align-items:center;">
-            <div style="font-size:clamp(72px,10vw,120px);font-weight:700;line-height:1;color:#ff4b4b;white-space:nowrap;">${r.number}</div>
-            <div style="font-size:17px;color:rgba(255,255,255,.78);line-height:1.7;">${r.description}</div>
-          </div>
-          <!-- Ghost number -->
-          <div style="position:absolute;right:-20px;bottom:-30px;font-size:220px;font-weight:700;color:rgba(255,255,255,.025);line-height:1;pointer-events:none;user-select:none;">${r.number}</div>
-        </div>`).join('')}
-      <!-- Dot nav + counter -->
-      ${refs.length > 1 ? `
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;">
-        <div style="display:flex;gap:7px;">
-          ${refs.map((_, i) => `<button class="ref-dot-btn" data-i="${i}" onclick="spotlightGoto(${i})" style="width:${i===0?'24':'8'}px;height:8px;border-radius:4px;border:none;background:${i===0?'#ff4b4b':'#ccc'};cursor:pointer;transition:all .25s;padding:0;"></button>`).join('')}
-        </div>
-        <span id="ref-spot-counter" style="font-size:12px;font-weight:600;color:#aaa;">1 / ${refs.length}</span>
-      </div>` : ''}
+  const openItemsHtml = (data.open_items && data.open_items.length) ? `
+    <div class="scroll-reveal" style="margin-bottom:44px;">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#ff4b4b;margin-bottom:14px;">Before you send</div>
+      <div style="background:white;border-radius:16px;padding:20px 28px;box-shadow:0 1px 6px rgba(0,0,0,.06);">
+        ${data.open_items.map((q, i, arr) => `
+          <div style="display:flex;align-items:flex-start;gap:10px;padding:9px 0;${i < arr.length-1 ? 'border-bottom:1px solid #f8f7f5;' : ''}">
+            <span style="color:#ff4b4b;font-weight:700;font-size:14px;flex-shrink:0;margin-top:1px;">?</span>
+            <span style="font-size:14px;color:#555;line-height:1.6;">${q}</span>
+          </div>`).join('')}
+      </div>
     </div>` : '';
 
   const avatar = profile.photo
@@ -1103,7 +1110,6 @@ function _rebuildOutput() {
       <div style="display:flex;gap:8px;align-items:center;">
         <button class="back-btn" onclick="showInput()"><i class="ph ph-arrow-left"></i> New</button>
         <button class="back-btn" onclick="showInput(_lastInput)" style="color:rgba(255,255,255,0.6);border:1.5px solid rgba(255,255,255,0.12);border-radius:7px;padding:5px 12px;"><i class="ph ph-arrows-clockwise"></i> Regenerate</button>
-        <button class="back-btn" onclick="openEditPanel()" style="color:rgba(255,255,255,0.6);border:1.5px solid rgba(255,255,255,0.12);border-radius:7px;padding:5px 12px;"><i class="ph ph-pencil-simple"></i> Edit</button>
       </div>
       <div style="display:flex;align-items:center;gap:10px;">
         ${LOGO_SVG_WHITE}
@@ -1111,18 +1117,16 @@ function _rebuildOutput() {
       </div>
     </div>
 
-    <!-- HERO — typewriter on full headline -->
+    <!-- HERO -->
     <div style="position:relative;overflow:hidden;background:#100c2a;padding:64px var(--sp-6) 72px;min-height:320px;display:flex;align-items:flex-end;">
       <div style="position:absolute;top:-15%;right:-10%;height:115%;pointer-events:none;opacity:.9;mix-blend-mode:screen;">${BLOB}</div>
       <div style="position:relative;z-index:1;max-width:900px;width:100%;">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:22px;opacity:0;animation:fadeUp .5s .1s ease forwards;">
-          <span style="font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.35);">${input.name}</span>
+          <span style="font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.35);">Stripe Pitch</span>
           <span style="width:3px;height:3px;border-radius:50%;background:rgba(255,255,255,.2);"></span>
           <span style="font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.35);">${input.company}</span>
         </div>
-        <div id="tw-container" style="font-size:clamp(28px,4vw,52px);font-weight:700;line-height:1.18;max-width:840px;visibility:hidden;">
-          <span id="tw-out" style="color:white;"></span><span id="tw-name-done" style="background:linear-gradient(135deg,#ff4b4b,#ff744f);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;display:none;">${firstName},</span><span id="tw-rest-out" style="color:white;display:none;"> ${greetingText}</span><span id="tw-cursor" style="color:#ff4b4b;animation:blink 1s step-end infinite;display:none;">|</span>
-        </div>
+        <div id="tw-container" style="font-size:clamp(28px,4vw,52px);font-weight:700;line-height:1.18;max-width:840px;visibility:hidden;color:white;"></div>
       </div>
     </div>
 
@@ -1131,25 +1135,21 @@ function _rebuildOutput() {
       <div style="max-width:1100px;margin:0 auto;padding:52px var(--sp-6) 80px;">
 
         <div class="scroll-reveal" style="margin-bottom:44px;">
-          <div style="font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#ff4b4b;margin-bottom:14px;">Your situation</div>
-          <div style="background:white;border-radius:16px;padding:28px 32px;box-shadow:0 1px 6px rgba(0,0,0,.06);">
-            <p style="font-size:16px;line-height:1.85;color:#2a2a2a;">${data.situation||data.context_paragraph||''}</p>
+          <div style="font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#ff4b4b;margin-bottom:14px;">Prospect Snapshot</div>
+          <div style="background:white;border-radius:16px;padding:4px 28px;box-shadow:0 1px 6px rgba(0,0,0,.06);">
+            ${snapshotRows}
           </div>
         </div>
 
-        <div class="scroll-reveal" id="ep-bring-display" style="margin-bottom:44px;">
-          <div style="font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#ff4b4b;margin-bottom:14px;">What we'd do for ${input.company}</div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">${approachCards}</div>
+        <div class="scroll-reveal" style="margin-bottom:44px;">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#ff4b4b;margin-bottom:14px;">Where Stripe wins for ${input.company}</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">${blockCards}</div>
         </div>
 
-        ${refs.length ? `
-        <div class="scroll-reveal" style="margin-bottom:44px;">
-          <div style="font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#ff4b4b;margin-bottom:14px;">Proven results</div>
-          ${refSpotlight}
-        </div>` : ''}
+        ${openItemsHtml}
 
-        <div class="scroll-reveal" id="ep-nextstep-display" style="margin-bottom:32px;">
-          <div style="font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#ff4b4b;margin-bottom:14px;">Here's what I'd suggest</div>
+        <div class="scroll-reveal" style="margin-bottom:32px;">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#ff4b4b;margin-bottom:14px;">Next Step</div>
           <div style="background:white;border-radius:16px;padding:28px 32px;box-shadow:0 1px 6px rgba(0,0,0,.06);">
             <p style="font-size:15px;color:#444;line-height:1.75;margin-bottom:22px;">${data.next_step||''}</p>
             <a href="mailto:${profile.email}" style="display:inline-flex;align-items:center;gap:8px;padding:13px 26px;background:linear-gradient(135deg,#ff4b4b,#ff744f);color:white;font-family:'Maven Pro',sans-serif;font-weight:700;font-size:14px;border-radius:99px;text-decoration:none;transition:transform .15s,box-shadow .15s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(255,75,75,.35)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
@@ -1184,47 +1184,21 @@ function _rebuildOutput() {
     </style>
   `;
 
-  // Typewriter on full headline — reveal container after delay, then type
-  const fullText = firstName + ', ' + greetingText;
-  const nameLen = (firstName + ',').length;
-  let ni = 0;
-  const twOut = document.getElementById('tw-out');
-  const twCursor = document.getElementById('tw-cursor');
-  const twNameDone = document.getElementById('tw-name-done');
-  const twRestOut = document.getElementById('tw-rest-out');
+  // Typewriter on headline — type plain text, then swap in highlighted version
   const twContainer = document.getElementById('tw-container');
-
+  let ni = 0;
   setTimeout(() => {
     if (twContainer) twContainer.style.visibility = 'visible';
-    if (twCursor) twCursor.style.display = 'inline';
     const timer = setInterval(() => {
-      if (ni <= fullText.length) {
-        if (ni <= nameLen) {
-          if (twOut) twOut.textContent = fullText.slice(0, ni);
-        } else {
-          if (twOut) twOut.style.display = 'none';
-          if (twNameDone) twNameDone.style.display = 'inline';
-          if (twRestOut) {
-            twRestOut.style.display = 'inline';
-            twRestOut.textContent = ' ' + fullText.slice(nameLen + 1, ni);
-          }
-        }
+      if (ni <= headline.length) {
+        twContainer.innerHTML = headline.slice(0, ni) + '<span style="color:#ff4b4b;animation:blink 1s step-end infinite;">|</span>';
         ni++;
       } else {
+        twContainer.innerHTML = highlightedHeadline;
         clearInterval(timer);
-        if (twCursor) twCursor.style.display = 'none';
       }
-    }, 45);
+    }, 40);
   }, 400);
-
-  // Store refs for spotlight
-  window._spotRefs = refs;
-  window._spotIdx = 0;
-
-  // Auto-advance spotlight
-  if (refs.length > 1) {
-    window._spotTimer = setInterval(() => spotlightGoto((window._spotIdx + 1) % refs.length), 8000);
-  }
 
   // Scroll reveal
   const obs = new IntersectionObserver(entries => {
