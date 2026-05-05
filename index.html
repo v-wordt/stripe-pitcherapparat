@@ -677,6 +677,27 @@
     <p style="font-size:11px;color:rgba(255,255,255,.2);margin-top:20px;">valantic confidential · internal use only</p>
   </div>
 </div>
+
+<div id="profile-gate" style="position:fixed;inset:0;background:#100c2a;z-index:9998;display:none;align-items:center;justify-content:center;padding:24px;font-family:'Maven Pro',sans-serif;">
+  <div style="width:100%;max-width:400px;text-align:center;">
+    <div style="font-size:13px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:12px;">Stripe × valantic</div>
+    <h1 style="font-size:24px;font-weight:700;color:white;margin-bottom:8px;">Wer bist du?</h1>
+    <p style="font-size:14px;color:rgba(255,255,255,.4);margin-bottom:32px;">Deine Angaben erscheinen am Ende des Pitches. Nur einmal nötig.</p>
+    <input id="profile-name-input" type="text" placeholder="Name" autocomplete="name"
+      style="width:100%;padding:15px 20px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:white;font-family:'Maven Pro',sans-serif;font-size:15px;outline:none;margin-bottom:10px;display:block;"
+      onkeydown="if(event.key==='Enter')document.getElementById('profile-role-input').focus()">
+    <input id="profile-role-input" type="text" placeholder="Rolle (z.B. Account Manager, valantic)" autocomplete="organization-title"
+      style="width:100%;padding:15px 20px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:white;font-family:'Maven Pro',sans-serif;font-size:15px;outline:none;margin-bottom:10px;display:block;"
+      onkeydown="if(event.key==='Enter')document.getElementById('profile-email-input').focus()">
+    <input id="profile-email-input" type="email" placeholder="E-Mail" autocomplete="email"
+      style="width:100%;padding:15px 20px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:white;font-family:'Maven Pro',sans-serif;font-size:15px;outline:none;margin-bottom:10px;display:block;"
+      onkeydown="if(event.key==='Enter')saveProfileGate()">
+    <div id="profile-err" style="font-size:12px;color:#ff4b4b;min-height:16px;margin-bottom:10px;"></div>
+    <button id="profile-btn" onclick="saveProfileGate()" style="width:100%;padding:14px;border-radius:12px;border:none;background:linear-gradient(135deg,#ff4b4b,#ff744f);color:white;font-family:'Maven Pro',sans-serif;font-size:15px;font-weight:700;cursor:pointer;">Los geht's</button>
+    <p style="font-size:11px;color:rgba(255,255,255,.2);margin-top:20px;">valantic confidential · internal use only</p>
+  </div>
+</div>
+
 <div id="main-app" style="display:none;">
 
 
@@ -741,30 +762,12 @@
 
   <div class="form-section">
 
-    <!-- Header with profile in corner -->
+    <!-- Header -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-3);">
       <span class="eyebrow" style="font-size:11px;">Unternehmen</span>
-      <!-- Profile pill -->
-      <div style="position:relative;">
-        <button onclick="toggleProfile()" id="profile-toggle" style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:99px;padding:7px 16px 7px 8px;cursor:pointer;font-family:'Maven Pro',sans-serif;">
-          <div id="profile-avatar-display" style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#ff4b4b,#ff744f);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:white;flex-shrink:0;overflow:hidden;">JM</div>
-          <div id="profile-name-display" style="font-size:14px;font-weight:600;color:rgba(255,255,255,0.8);">Joshua Marckwordt</div>
-          <i class="ph ph-pencil-simple" style="font-size:13px;color:rgba(255,255,255,0.4);"></i>
-        </button>
-        <!-- Dropdown -->
-        <div id="profile-edit" style="display:none;position:absolute;top:calc(100% + 8px);right:0;width:320px;background:#0d0b20;border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:var(--sp-3);z-index:100;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-            <span style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,0.4);">Mein Profil</span>
-            <button onclick="toggleProfile()" style="background:none;border:none;color:rgba(255,255,255,0.4);cursor:pointer;font-size:20px;line-height:1;padding:0;">×</button>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:10px;">
-            <div class="form-group"><label>Mein Name</label><input type="text" id="my-name" placeholder="Joshua Marckwordt" /></div>
-            <div class="form-group"><label>Meine Funktion</label><input type="text" id="my-role" placeholder="Account Manager, valantic" /></div>
-            <div class="form-group"><label>Meine E-Mail</label><input type="text" id="my-email" placeholder="joshua.marckwordt@nxt.valantic.com" /></div>
-            <div class="form-group"><label>Foto URL <span style="font-weight:400;opacity:.5;">(z.B. von LinkedIn)</span></label><input type="text" id="my-photo" placeholder="https://media.linkedin.com/..." /></div>
-          </div>
-          <button onclick="saveProfile()" style="margin-top:12px;font-family:'Maven Pro',sans-serif;font-size:13px;font-weight:700;padding:9px 16px;background:var(--val-gradient);color:white;border:none;border-radius:8px;cursor:pointer;width:100%;">Save</button>
-        </div>
+      <div id="profile-display" style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:99px;padding:6px 14px 6px 7px;">
+        <div id="profile-avatar-display" style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#ff4b4b,#ff744f);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;flex-shrink:0;overflow:hidden;"></div>
+        <div id="profile-name-display" style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.7);"></div>
       </div>
     </div>
 
@@ -820,33 +823,15 @@ const DEMO_API_KEY = null; // for local testing only: 'sk-ant-...'
 
 // ── PROFILE (localStorage) ────────────────────────────────────────────────
 function loadProfile() {
-  try {
-    const p = JSON.parse(localStorage.getItem('valantic_profile') || '{}');
-    return {
-      name: p.name || 'Joshua Marckwordt',
-      role: p.role || 'Account Manager, valantic',
-      email: p.email || 'joshua.marckwordt@nxt.valantic.com',
-      photo: p.photo || null,
-    };
-  } catch { return {}; }
-}
-
-function saveProfile() {
-  const p = {
-    name: document.getElementById('my-name').value.trim() || 'Joshua Marckwordt',
-    role: document.getElementById('my-role').value.trim() || 'Account Manager, valantic',
-    email: document.getElementById('my-email').value.trim() || 'joshua.marckwordt@nxt.valantic.com',
-    photo: document.getElementById('my-photo').value.trim() || null,
-  };
-  localStorage.setItem('valantic_profile', JSON.stringify(p));
-  renderProfileDisplay(p);
-  toggleProfile();
+  try { return JSON.parse(localStorage.getItem('valantic_profile') || 'null') || null; }
+  catch { return null; }
 }
 
 function renderProfileDisplay(p) {
-  const initials = (p.name || 'JM').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+  if (!p) return;
+  const initials = p.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
   const nameEl = document.getElementById('profile-name-display');
-  if (nameEl) nameEl.textContent = p.name || 'Joshua Marckwordt';
+  if (nameEl) nameEl.textContent = p.name;
   const av = document.getElementById('profile-avatar-display');
   if (av) {
     if (p.photo) {
@@ -859,20 +844,17 @@ function renderProfileDisplay(p) {
   }
 }
 
-function toggleProfile() {
-  const edit = document.getElementById('profile-edit');
-  if (!edit) return;
-  const isOpen = edit.style.display !== 'none';
-  if (!isOpen) {
-    const p = loadProfile();
-    document.getElementById('my-name').value = p.name || '';
-    document.getElementById('my-role').value = p.role || '';
-    document.getElementById('my-email').value = p.email || '';
-    document.getElementById('my-photo').value = p.photo || '';
-    edit.style.display = 'block';
-  } else {
-    edit.style.display = 'none';
-  }
+function saveProfileGate() {
+  const name = document.getElementById('profile-name-input').value.trim();
+  const role = document.getElementById('profile-role-input').value.trim();
+  const email = document.getElementById('profile-email-input').value.trim();
+  const err = document.getElementById('profile-err');
+  if (!name || !email) { err.textContent = 'Name und E-Mail sind Pflichtfelder.'; return; }
+  const p = { name, role, email, photo: null };
+  localStorage.setItem('valantic_profile', JSON.stringify(p));
+  document.getElementById('profile-gate').style.display = 'none';
+  renderProfileDisplay(p);
+  document.getElementById('main-app').style.display = 'block';
 }
 
 // ── HISTORY (localStorage, last 5) ───────────────────────────────────────
@@ -1491,7 +1473,6 @@ function showOutput() {
 
 document.getElementById('input-screen').style.display = 'flex';
 (function init() {
-  renderProfileDisplay(loadProfile());
   renderHistory();
   // Load stats counter
   if (BACKEND_URL) {
@@ -1599,7 +1580,14 @@ document.getElementById('input-screen').style.display = 'flex';
 
 </div>
 <script>
-(function(){if(sessionStorage.getItem('vauth')==='1'&&sessionStorage.getItem('vauth_token')){document.getElementById('pw-gate').style.display='none';document.getElementById('main-app').style.display='block';}})();
+(function(){
+  if(sessionStorage.getItem('vauth')==='1'&&sessionStorage.getItem('vauth_token')){
+    document.getElementById('pw-gate').style.display='none';
+    const p=loadProfile();
+    if(!p){document.getElementById('profile-gate').style.display='flex';}
+    else{renderProfileDisplay(p);document.getElementById('main-app').style.display='block';}
+  }
+})();
 async function checkPW(){
   const v=document.getElementById('pw-input').value.trim();
   const e=document.getElementById('pw-err');
@@ -1614,7 +1602,13 @@ async function checkPW(){
     sessionStorage.setItem('vauth','1');
     sessionStorage.setItem('vauth_token',v);
     document.getElementById('pw-gate').style.display='none';
-    document.getElementById('main-app').style.display='block';
+    const profile = loadProfile();
+    if (!profile) {
+      document.getElementById('profile-gate').style.display='flex';
+    } else {
+      renderProfileDisplay(profile);
+      document.getElementById('main-app').style.display='block';
+    }
   } catch(err){
     e.textContent='Verbindungsfehler. Bitte erneut versuchen.';
   } finally {
