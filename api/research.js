@@ -203,7 +203,7 @@ export default async function handler(req, res) {
       const prompt = buildResearchPrompt(company, website, fields, websiteContent, searchContent);
 
       const msg = await client.messages.create({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'claude-opus-4-7',
         max_tokens: 4096,
         messages: [{ role: 'user', content: prompt }]
       });

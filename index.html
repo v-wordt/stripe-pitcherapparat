@@ -664,7 +664,8 @@
     /* ── PROSPECT PROFILE & MAPPING DRAFT SCREENS ── */
     #prospect-profile-screen, #mapping-draft-screen {
       display: none;
-      min-height: 100vh;
+      height: 100vh;
+      overflow: hidden;
       background: var(--val-black);
       flex-direction: column;
     }
@@ -687,22 +688,34 @@
     .research-container {
       display: flex;
       flex: 1;
+      min-height: 0;
       overflow: hidden;
     }
 
     .research-content {
-      flex: 1.5;
+      flex: 1;
       overflow-y: auto;
       padding: var(--sp-6);
       border-right: 1px solid rgba(255,255,255,0.08);
     }
 
     .research-chat {
-      flex: 1;
+      width: 360px;
+      flex-shrink: 0;
       display: flex;
       flex-direction: column;
       background: rgba(255,255,255,0.02);
       overflow: hidden;
+    }
+
+    .chat-header {
+      padding: 14px var(--sp-3) 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
     }
 
     .chat-messages {
@@ -1036,10 +1049,13 @@
       <div class="loading-ring" style="margin: auto;"></div>
     </div>
     <div class="research-chat">
-      <div class="chat-messages" id="profile-chat-messages"></div>
+      <div class="chat-header">Profil verfeinern</div>
+      <div class="chat-messages" id="profile-chat-messages">
+        <div class="chat-message claude"><div class="msg-bubble">Ich habe das Profil ausgefüllt. Was soll ich korrigieren oder ergänzen?</div></div>
+      </div>
       <div class="chat-input-area">
-        <input type="text" id="profile-chat-input" placeholder="Verfeinern Sie das Profil…" onkeydown="if(event.key==='Enter')sendProfileChat()">
-        <button class="chat-send-btn" id="profile-send-btn" onclick="sendProfileChat()">Send</button>
+        <input type="text" id="profile-chat-input" placeholder="z.B. „Der Umsatz liegt bei ~€80M"" onkeydown="if(event.key==='Enter')sendProfileChat()">
+        <button class="chat-send-btn" id="profile-send-btn" onclick="sendProfileChat()"><i class="ph ph-paper-plane-tilt"></i></button>
       </div>
     </div>
   </div>
@@ -1066,10 +1082,13 @@
       <div class="loading-ring" style="margin: auto;"></div>
     </div>
     <div class="research-chat">
-      <div class="chat-messages" id="mapping-chat-messages"></div>
+      <div class="chat-header">Mapping verfeinern</div>
+      <div class="chat-messages" id="mapping-chat-messages">
+        <div class="chat-message claude"><div class="msg-bubble">Ich habe das Mapping erstellt. Was soll ich anpassen?</div></div>
+      </div>
       <div class="chat-input-area">
-        <input type="text" id="mapping-chat-input" placeholder="Verfeinern Sie das Mapping…" onkeydown="if(event.key==='Enter')sendMappingChat()">
-        <button class="chat-send-btn" id="mapping-send-btn" onclick="sendMappingChat()">Send</button>
+        <input type="text" id="mapping-chat-input" placeholder="z.B. „Fokus mehr auf Payments"" onkeydown="if(event.key==='Enter')sendMappingChat()">
+        <button class="chat-send-btn" id="mapping-send-btn" onclick="sendMappingChat()"><i class="ph ph-paper-plane-tilt"></i></button>
       </div>
     </div>
   </div>
