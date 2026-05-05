@@ -673,7 +673,7 @@
       style="width:100%;padding:15px 20px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:white;font-family:'Maven Pro',sans-serif;font-size:15px;outline:none;margin-bottom:10px;display:block;"
       onkeydown="if(event.key==='Enter')checkPW()">
     <div id="pw-err" style="font-size:12px;color:#ff4b4b;min-height:16px;margin-bottom:10px;"></div>
-    <button onclick="checkPW()" style="width:100%;padding:14px;border-radius:12px;border:none;background:linear-gradient(135deg,#ff4b4b,#ff744f);color:white;font-family:'Maven Pro',sans-serif;font-size:15px;font-weight:700;cursor:pointer;">Access Tool</button>
+    <button id="pw-btn" onclick="checkPW()" style="width:100%;padding:14px;border-radius:12px;border:none;background:linear-gradient(135deg,#ff4b4b,#ff744f);color:white;font-family:'Maven Pro',sans-serif;font-size:15px;font-weight:700;cursor:pointer;">Zugang</button>
     <p style="font-size:11px;color:rgba(255,255,255,.2);margin-top:20px;">valantic confidential · internal use only</p>
   </div>
 </div>
@@ -1600,16 +1600,27 @@ document.getElementById('input-screen').style.display = 'flex';
 </div>
 <script>
 (function(){if(sessionStorage.getItem('vauth')==='1'&&sessionStorage.getItem('vauth_token')){document.getElementById('pw-gate').style.display='none';document.getElementById('main-app').style.display='block';}})();
-function checkPW(){
+async function checkPW(){
   const v=document.getElementById('pw-input').value.trim();
   const e=document.getElementById('pw-err');
-  if(!v){e.textContent='Please enter an access code.';return;}
-  // No client-side validation — backend validates via SHARED_SECRET
-  // Store and show app; if backend rejects we'll catch it on first call
-  sessionStorage.setItem('vauth','1');
-  sessionStorage.setItem('vauth_token', v);
-  document.getElementById('pw-gate').style.display='none';
-  document.getElementById('main-app').style.display='block';
+  const btn=document.getElementById('pw-btn');
+  if(!v){e.textContent='Bitte Zugangs-Code eingeben.';return;}
+  btn.disabled=true;
+  btn.textContent='Prüfe…';
+  try {
+    const res=await fetch(`${BACKEND_URL}/ping`,{headers:{'x-valantic-secret':v}});
+    if(res.status===401){e.textContent='Falscher Zugangs-Code.';setTimeout(()=>e.textContent='',3000);return;}
+    if(!res.ok){e.textContent='Server-Fehler. Bitte erneut versuchen.';return;}
+    sessionStorage.setItem('vauth','1');
+    sessionStorage.setItem('vauth_token',v);
+    document.getElementById('pw-gate').style.display='none';
+    document.getElementById('main-app').style.display='block';
+  } catch(err){
+    e.textContent='Verbindungsfehler. Bitte erneut versuchen.';
+  } finally {
+    btn.disabled=false;
+    btn.textContent='Zugang';
+  }
 }
 
 // Called when backend returns 401 — kick user back to gate

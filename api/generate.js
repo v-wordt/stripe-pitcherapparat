@@ -312,6 +312,13 @@ export default async function handler(req, res) {
     return res.status(200).end(gif);
   }
 
+  // ── GET /api/ping — auth check for password gate ─────────────────────
+  if(req.method==='GET' && path.includes('/ping')) {
+    if(!SHARED_SECRET) return res.status(500).json({error:'SHARED_SECRET not configured'});
+    if(req.headers['x-valantic-secret']!==SHARED_SECRET) return res.status(401).json({error:'Unauthorized'});
+    return res.status(200).json({ok:true});
+  }
+
   // ── POST /api/generate ────────────────────────────────────────────────
   if(req.method!=='POST') return res.status(405).json({error:'Method not allowed'});
   if(!SHARED_SECRET) return res.status(500).json({error:'SHARED_SECRET not configured'});
