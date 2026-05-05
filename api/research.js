@@ -6,9 +6,9 @@ const SHARED_SECRET = process.env.SHARED_SECRET;
 const GOOGLE_SHEET_ID = '1Okk8GvpMxNpAimn6Z1Dkt2lAzj3Qd8IM';
 const GOOGLE_PROSPECT_PROFILE_GID = '886669856';
 
-const MODEL_RESEARCH = 'claude-opus-4-7';
+const MODEL_RESEARCH = 'claude-sonnet-4-6';
 const MODEL_REFINE = 'claude-haiku-4-5-20251001';
-const LOOP_BUDGET = 6;
+const LOOP_BUDGET = 4;
 const FETCH_CHAR_CAP = 8000;
 
 async function fetchProfileFields() {
@@ -233,6 +233,8 @@ async function runAgenticResearch(company, website, fields, seedInputs) {
       response = await client.messages.create({
         model: MODEL_RESEARCH,
         max_tokens: 4096,
+        thinking: { type: 'adaptive' },
+        output_config: { effort: 'medium' },
         system: RESEARCH_DOCTRINE,
         tools,
         messages
@@ -274,6 +276,8 @@ async function runAgenticResearch(company, website, fields, seedInputs) {
   const synthResponse = await client.messages.create({
     model: MODEL_RESEARCH,
     max_tokens: 16000,
+    thinking: { type: 'adaptive' },
+    output_config: { effort: 'medium' },
     system: RESEARCH_DOCTRINE,
     messages
   });
@@ -310,6 +314,8 @@ ${buildSynthesisPrompt()}`;
   const msg = await client.messages.create({
     model: MODEL_RESEARCH,
     max_tokens: 16000,
+    thinking: { type: 'adaptive' },
+    output_config: { effort: 'medium' },
     system: RESEARCH_DOCTRINE,
     messages: [{ role: 'user', content: prompt }]
   });
