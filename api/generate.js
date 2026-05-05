@@ -4,7 +4,6 @@ import { v4 as uuidv4 } from 'uuid';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const SHARED_SECRET = process.env.SHARED_SECRET;
-if(!SHARED_SECRET) throw new Error('SHARED_SECRET env var not set');
 
 // ── MCP SERVER ────────────────────────────────────────────────────────────
 const MCP_URL = 'https://ca-reference-db-mcp-server.calmsky-b809d8a4.germanywestcentral.azurecontainerapps.io';
@@ -315,6 +314,7 @@ export default async function handler(req, res) {
 
   // ── POST /api/generate ────────────────────────────────────────────────
   if(req.method!=='POST') return res.status(405).json({error:'Method not allowed'});
+  if(!SHARED_SECRET) return res.status(500).json({error:'SHARED_SECRET not configured'});
   if(req.headers['x-valantic-secret']!==SHARED_SECRET) return res.status(401).json({error:'Unauthorized'});
   const {company,website,contact}=req.body||{};
   if(!company||!website) return res.status(400).json({error:'company and website required'});
