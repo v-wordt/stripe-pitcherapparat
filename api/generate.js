@@ -313,7 +313,7 @@ export default async function handler(req, res) {
   }
 
   // ── GET /api/ping — auth check for password gate ─────────────────────
-  if(req.method==='GET' && path.includes('/ping')) {
+  if(req.method==='GET' && !path.includes('/stats') && !path.includes('/open/')) {
     if(!SHARED_SECRET) return res.status(500).json({error:'SHARED_SECRET not configured'});
     if(req.headers['x-valantic-secret']!==SHARED_SECRET) return res.status(401).json({error:'Unauthorized'});
     return res.status(200).json({ok:true});

@@ -1608,7 +1608,7 @@ async function checkPW(){
   btn.disabled=true;
   btn.textContent='Prüfe…';
   try {
-    const res=await fetch(`${BACKEND_URL}/ping`,{headers:{'x-valantic-secret':v}});
+    const res=await fetch(`${BACKEND_URL}/generate`,{headers:{'x-valantic-secret':v}});
     if(res.status===401){e.textContent='Falscher Zugangs-Code.';setTimeout(()=>e.textContent='',3000);return;}
     if(!res.ok){e.textContent='Server-Fehler. Bitte erneut versuchen.';return;}
     sessionStorage.setItem('vauth','1');
