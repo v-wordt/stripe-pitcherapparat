@@ -8,7 +8,7 @@ const GOOGLE_PROSPECT_PROFILE_GID = '886669856';
 
 const MODEL_RESEARCH = 'claude-sonnet-4-6';
 const MODEL_REFINE = 'claude-haiku-4-5-20251001';
-const LOOP_BUDGET = 4;
+const LOOP_BUDGET = 2;
 const FETCH_CHAR_CAP = 8000;
 
 async function fetchProfileFields() {
@@ -111,25 +111,30 @@ function fieldListString(fields) {
     .join('\n\n');
 }
 
-function buildSeedUserMessage(company, website, fields, websiteContent, searchDe, searchEn) {
+function buildSeedUserMessage(company, website, fields, seed) {
+  const sections = [
+    ['HOMEPAGE (via Jina Reader)', seed.websiteContent],
+    ['IMPRESSUM (legal page — usually contains address, legal form, directors)', seed.impressumContent],
+    ['ABOUT PAGE', seed.aboutContent],
+    ['WEB SEARCH (DE)', seed.searchDe],
+    ['WEB SEARCH (EN)', seed.searchEn],
+  ];
+
+  const seedDump = sections
+    .map(([label, content]) => `--- ${label} ---\n${content || '(unavailable)'}`)
+    .join('\n\n');
+
   return `Company: ${company}
 Website (anchor only — do not stop here): ${website}
 
-PRELIMINARY FINDINGS (seed dump — extend with web_search and fetch_url as needed)
+PRELIMINARY FINDINGS (seed dump — extend with web_search and fetch_url ONLY if you have material gaps)
 
---- HOMEPAGE (via Jina Reader) ---
-${websiteContent || '(homepage fetch failed — investigate via web_search)'}
-
---- WEB SEARCH (DE) ---
-${searchDe || '(search failed)'}
-
---- WEB SEARCH (EN) ---
-${searchEn || '(search failed)'}
+${seedDump}
 
 --- FIELDS TO POPULATE ---
 ${fieldListString(fields)}
 
-Begin researching. Use web_search and fetch_url to fill every field per the decision ladder.`;
+The seed above is rich. Fill every field you can directly from it. Use web_search and fetch_url ONLY for fields the seed cannot answer. Then synthesise per the decision ladder.`;
 }
 
 function buildSynthesisPrompt() {
@@ -185,7 +190,7 @@ const FETCH_URL_TOOL = {
   }
 };
 
-const WEB_SEARCH_TOOL = { type: 'web_search_20250305', name: 'web_search', max_uses: 10 };
+const WEB_SEARCH_TOOL = { type: 'web_search_20250305', name: 'web_search', max_uses: 3 };
 
 function isInvalidToolError(err) {
   const msg = err && err.message ? String(err.message) : '';
@@ -216,16 +221,15 @@ async function executeToolUse(block) {
 }
 
 async function runAgenticResearch(company, website, fields, seedInputs) {
-  const { websiteContent, searchDe, searchEn } = seedInputs;
-
   const messages = [{
     role: 'user',
-    content: buildSeedUserMessage(company, website, fields, websiteContent, searchDe, searchEn)
+    content: buildSeedUserMessage(company, website, fields, seedInputs)
   }];
 
   let useWebSearch = true;
 
   for (let turn = 0; turn < LOOP_BUDGET; turn++) {
+    const t = Date.now();
     const tools = useWebSearch ? [WEB_SEARCH_TOOL, FETCH_URL_TOOL] : [FETCH_URL_TOOL];
 
     let response;
@@ -233,8 +237,8 @@ async function runAgenticResearch(company, website, fields, seedInputs) {
       response = await client.messages.create({
         model: MODEL_RESEARCH,
         max_tokens: 4096,
-        thinking: { type: 'adaptive' },
-        output_config: { effort: 'medium' },
+        thinking: { type: 'disabled' },
+        output_config: { effort: 'low' },
         system: RESEARCH_DOCTRINE,
         tools,
         messages
@@ -248,6 +252,7 @@ async function runAgenticResearch(company, website, fields, seedInputs) {
       }
       throw err;
     }
+    console.log(`[research] loop turn ${turn + 1} took ${Date.now() - t}ms (stop_reason=${response.stop_reason})`);
 
     if (response.stop_reason === 'pause_turn') {
       messages.push({ role: 'assistant', content: response.content });
@@ -262,17 +267,17 @@ async function runAgenticResearch(company, website, fields, seedInputs) {
 
     const customToolUses = toolUses.filter(b => b.name === 'fetch_url');
     if (customToolUses.length > 0) {
+      const tFetch = Date.now();
       const results = await Promise.all(customToolUses.map(executeToolUse));
+      console.log(`[research] turn ${turn + 1} fetch_url x${customToolUses.length} took ${Date.now() - tFetch}ms`);
       messages.push({ role: 'user', content: results });
-    } else {
-      // Only server-side web_search calls in this turn — server already injected
-      // results into response.content; loop again to let Claude react.
     }
   }
 
-  // Force synthesis — no tools available
+  // Force synthesis — no tools available, but enable thinking + medium effort for careful estimates
   messages.push({ role: 'user', content: buildSynthesisPrompt() });
 
+  const tSynth = Date.now();
   const synthResponse = await client.messages.create({
     model: MODEL_RESEARCH,
     max_tokens: 16000,
@@ -281,6 +286,7 @@ async function runAgenticResearch(company, website, fields, seedInputs) {
     system: RESEARCH_DOCTRINE,
     messages
   });
+  console.log(`[research] synthesis took ${Date.now() - tSynth}ms (stop_reason=${synthResponse.stop_reason})`);
 
   return parseSynthesisJson(synthResponse);
 }
@@ -306,8 +312,7 @@ function parseSynthesisJson(response) {
 
 // Single-call fallback if the agentic loop fails entirely
 async function fallbackSinglePass(company, website, fields, seedInputs) {
-  const { websiteContent, searchDe, searchEn } = seedInputs;
-  const prompt = `${buildSeedUserMessage(company, website, fields, websiteContent, searchDe, searchEn)}
+  const prompt = `${buildSeedUserMessage(company, website, fields, seedInputs)}
 
 ${buildSynthesisPrompt()}`;
 
@@ -320,6 +325,20 @@ ${buildSynthesisPrompt()}`;
     messages: [{ role: 'user', content: prompt }]
   });
   return parseSynthesisJson(msg);
+}
+
+function deriveSubpages(website) {
+  if (!website) return { impressum: null, about: null };
+  try {
+    const u = new URL(website);
+    const origin = `${u.protocol}//${u.host}`;
+    return {
+      impressum: `${origin}/impressum`,
+      about: `${origin}/about`,
+    };
+  } catch {
+    return { impressum: null, about: null };
+  }
 }
 
 function buildRefinementPrompt(currentProfile, message, fetchedContent) {
@@ -405,21 +424,29 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'company and website required' });
     }
 
-    const [fields, websiteContent, searchDe, searchEn] = await Promise.all([
+    const subpages = deriveSubpages(website);
+    const tSeed = Date.now();
+    const [fields, websiteContent, impressumContent, aboutContent, searchDe, searchEn] = await Promise.all([
       fetchProfileFields(),
       fetchWithJina(website),
+      subpages.impressum ? fetchWithJina(subpages.impressum) : null,
+      subpages.about ? fetchWithJina(subpages.about) : null,
       searchWithJina(`${company} Wikipedia Impressum Geschäftsbericht Adresse Mitarbeiter`),
       searchWithJina(`${company} company news funding revenue employees products`)
     ]);
+    console.log(`[research] seed (parallel fetch) took ${Date.now() - tSeed}ms`);
 
-    const seedInputs = { websiteContent, searchDe, searchEn };
+    const seedInputs = { websiteContent, impressumContent, aboutContent, searchDe, searchEn };
 
     let researchedProfile;
+    const tLoop = Date.now();
     try {
       researchedProfile = await runAgenticResearch(company, website, fields, seedInputs);
+      console.log(`[research] agentic loop+synth total ${Date.now() - tLoop}ms`);
     } catch (err) {
       console.error('Agentic research failed, falling back to single pass:', err);
       researchedProfile = await fallbackSinglePass(company, website, fields, seedInputs);
+      console.log(`[research] fallback single pass total ${Date.now() - tLoop}ms`);
     }
 
     return res.status(200).json({ profile: researchedProfile });
