@@ -323,14 +323,26 @@ export default async function handler(req, res) {
   if(req.method!=='POST') return res.status(405).json({error:'Method not allowed'});
   if(!SHARED_SECRET) return res.status(500).json({error:'SHARED_SECRET not configured'});
   if(req.headers['x-valantic-secret']!==SHARED_SECRET) return res.status(401).json({error:'Unauthorized'});
-  const {company,website,contact}=req.body||{};
-  if(!company||!website) return res.status(400).json({error:'company and website required'});
+  const {company,website,contact,mappingDraft}=req.body||{};
+
+  // Accept either (company + website) for single-call flow or mappingDraft for three-stage flow
+  if(!mappingDraft && (!company||!website)) return res.status(400).json({error:'company/website or mappingDraft required'});
+
   const contactInfo={name:contact?.name||'Joshua Marckwordt',role:contact?.role||'Account Manager, valantic',email:contact?.email||'joshua.marckwordt@nxt.valantic.com',photo:contact?.photo||null,initials:(contact?.name||'Joshua Marckwordt').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()};
   try {
-    const msg=await client.messages.create({model:'claude-haiku-4-5-20251001',max_tokens:2000,messages:[{role:'user',content:buildPrompt(company,website)}]});
-    const text=msg.content.map(b=>b.text||'').join('');
-    const story=JSON.parse(text.replace(/^```json\s*/i,'').replace(/```\s*$/i,'').trim());
-    const slug=`${company.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')}-${uuidv4().slice(0,8)}`;
+    let story;
+
+    if(mappingDraft) {
+      // Three-stage flow: use pre-built Mapping Draft
+      story = mappingDraft;
+    } else {
+      // Single-call flow: research company and generate Mapping Draft
+      const msg=await client.messages.create({model:'claude-haiku-4-5-20251001',max_tokens:2000,messages:[{role:'user',content:buildPrompt(company,website)}]});
+      const text=msg.content.map(b=>b.text||'').join('');
+      story=JSON.parse(text.replace(/^```json\s*/i,'').replace(/```\s*$/i,'').trim());
+    }
+
+    const slug=`${company?.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'') || 'pitch'}-${uuidv4().slice(0,8)}`;
     const html=buildHTML(story,{company,website},contactInfo);
     const trackingPixel = `<img src="https://stripe-pitcherapparat.vercel.app/api/open/${slug}" width="1" height="1" style="position:absolute;opacity:0;pointer-events:none;" alt="">`;
     const htmlWithTracking = html.replace('</body>', trackingPixel + '</body>');

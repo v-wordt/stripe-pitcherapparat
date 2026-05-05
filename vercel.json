@@ -2,7 +2,13 @@
   "version": 2,
   "functions": {
     "api/generate.js": {
-      "maxDuration": 30
+      "maxDuration": 60
+    },
+    "api/research.js": {
+      "maxDuration": 60
+    },
+    "api/mapping.js": {
+      "maxDuration": 60
     }
   },
   "headers": [

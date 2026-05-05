@@ -660,6 +660,211 @@
       .out-hero, .out-body { padding-left: var(--sp-3); padding-right: var(--sp-3); }
       .out-topbar { padding-left: var(--sp-3); padding-right: var(--sp-3); }
     }
+
+    /* ── PROSPECT PROFILE & MAPPING DRAFT SCREENS ── */
+    #prospect-profile-screen, #mapping-draft-screen {
+      display: none;
+      min-height: 100vh;
+      background: var(--val-black);
+      flex-direction: column;
+    }
+
+    .research-topbar {
+      background: rgba(255,255,255,0.03);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding: var(--sp-3) var(--sp-6);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .research-title { font-size: 15px; font-weight: 700; color: white; }
+    .research-iterations { font-size: 13px; color: rgba(255,255,255,0.5); }
+
+    .research-container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .research-content {
+      flex: 1.5;
+      overflow-y: auto;
+      padding: var(--sp-6);
+      border-right: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .research-chat {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: rgba(255,255,255,0.02);
+      overflow: hidden;
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: var(--sp-3);
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-2);
+    }
+
+    .chat-message {
+      display: flex;
+      gap: var(--sp-2);
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    .chat-message.user { justify-content: flex-end; }
+    .chat-message.user .msg-bubble { background: var(--val-gradient); color: white; }
+    .chat-message.claude .msg-bubble { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.9); }
+
+    .msg-bubble {
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      max-width: 85%;
+      word-wrap: break-word;
+      line-height: 1.5;
+    }
+
+    .chat-input-area {
+      padding: var(--sp-3);
+      border-top: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      gap: var(--sp-1);
+    }
+
+    .chat-input-area input {
+      flex: 1;
+      font-size: 13px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: white;
+    }
+
+    .chat-input-area input::placeholder { color: rgba(255,255,255,0.3); }
+    .chat-input-area input:focus { border-color: var(--val-coral); background: rgba(255,255,255,0.08); }
+
+    .chat-send-btn {
+      padding: 10px 16px;
+      background: var(--val-gradient);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 12px;
+      transition: opacity 0.2s;
+    }
+
+    .chat-send-btn:hover:not(:disabled) { opacity: 0.9; }
+    .chat-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .profile-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .profile-table td {
+      padding: var(--sp-2);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      font-size: 14px;
+    }
+
+    .profile-category {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+      padding-top: var(--sp-3);
+      padding-bottom: var(--sp-2);
+    }
+
+    .profile-field-label {
+      color: rgba(255,255,255,0.6);
+      font-weight: 600;
+      width: 35%;
+    }
+
+    .profile-field-value {
+      color: white;
+      width: 65%;
+    }
+
+    .profile-assumption {
+      font-size: 11px;
+      color: var(--val-peach);
+      margin-top: 2px;
+      font-weight: 600;
+    }
+
+    .mapping-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--sp-3);
+      margin-bottom: var(--sp-6);
+    }
+
+    .mapping-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: var(--sp-3);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .mapping-card:hover { border-color: var(--val-coral); background: rgba(255,255,255,0.06); }
+
+    .card-fit { display: inline-block; font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 4px; margin-bottom: 8px; }
+    .card-fit.high { background: rgba(76,175,80,0.2); color: #4caf50; }
+    .card-fit.medium { background: rgba(255,152,0,0.2); color: #ff9800; }
+    .card-fit.low { background: rgba(158,158,158,0.2); color: #9e9e9e; }
+
+    .card-name { font-size: 14px; font-weight: 700; color: white; margin-bottom: 8px; }
+    .card-situation { font-size: 13px; color: rgba(255,255,255,0.8); font-style: italic; margin-bottom: 8px; }
+    .card-stripe { font-size: 13px; color: rgba(255,255,255,0.9); margin-bottom: 8px; }
+    .card-rationale { font-size: 11px; color: rgba(255,255,255,0.4); }
+
+    .mapping-narrative {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: var(--sp-4);
+      margin-bottom: var(--sp-6);
+    }
+
+    .narrative-headline { font-size: 20px; font-weight: 700; color: white; margin-bottom: var(--sp-2); }
+    .narrative-priorities { list-style: none; margin-top: var(--sp-2); }
+    .narrative-priorities li { font-size: 14px; color: rgba(255,255,255,0.8); padding: 6px 0; }
+    .narrative-priorities li:before { content: "→ "; color: var(--val-coral); font-weight: 700; margin-right: 6px; }
+
+    .research-button {
+      padding: 12px 24px;
+      background: var(--val-gradient);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-family: 'Maven Pro', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .research-button:hover:not(:disabled) { opacity: 0.9; }
+    .research-button:disabled { opacity: 0.5; cursor: not-allowed; }
   </style>
 </head>
 <body>
@@ -783,7 +988,7 @@
       </div>
     </div>
 
-    <button class="generate-btn" onclick="generatePitch()">
+    <button class="generate-btn" onclick="startResearch()">
       <i class="ph ph-sparkle" style="font-size:20px;"></i>
       Pitch generieren
     </button>
@@ -813,6 +1018,66 @@
 ══════════════════════════════════════════ -->
 <div id="output-screen">
   <!-- dynamically filled -->
+</div>
+
+<!-- ══════════════════════════════════════════
+     PROSPECT PROFILE SCREEN
+══════════════════════════════════════════ -->
+<div id="prospect-profile-screen">
+  <div class="research-topbar">
+    <div>
+      <div class="research-title">Prospect Profile</div>
+      <div class="research-iterations">Recherchiere und verfeinere…</div>
+    </div>
+    <button class="back-btn" onclick="showInput()"><i class="ph ph-arrow-left"></i> Zurück</button>
+  </div>
+  <div class="research-container">
+    <div class="research-content" id="profile-table-area">
+      <div class="loading-ring" style="margin: auto;"></div>
+    </div>
+    <div class="research-chat">
+      <div class="chat-messages" id="profile-chat-messages"></div>
+      <div class="chat-input-area">
+        <input type="text" id="profile-chat-input" placeholder="Verfeinern Sie das Profil…" onkeydown="if(event.key==='Enter')sendProfileChat()">
+        <button class="chat-send-btn" id="profile-send-btn" onclick="sendProfileChat()">Send</button>
+      </div>
+    </div>
+  </div>
+  <div style="padding: var(--sp-3) var(--sp-6); border-top: 1px solid rgba(255,255,255,0.08); display: flex; gap: var(--sp-2);">
+    <button class="research-button" onclick="proceedToMapping()" id="profile-next-btn" disabled style="flex: 1;">
+      <i class="ph ph-arrow-right"></i> Zum Mapping Entwurf
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MAPPING DRAFT SCREEN
+══════════════════════════════════════════ -->
+<div id="mapping-draft-screen">
+  <div class="research-topbar">
+    <div>
+      <div class="research-title">Mapping Draft</div>
+      <div class="research-iterations">Validieren Sie die Pains und Solutions…</div>
+    </div>
+    <button class="back-btn" onclick="showProspectProfile()"><i class="ph ph-arrow-left"></i> Zurück</button>
+  </div>
+  <div class="research-container">
+    <div class="research-content" id="mapping-content-area">
+      <div class="loading-ring" style="margin: auto;"></div>
+    </div>
+    <div class="research-chat">
+      <div class="chat-messages" id="mapping-chat-messages"></div>
+      <div class="chat-input-area">
+        <input type="text" id="mapping-chat-input" placeholder="Verfeinern Sie das Mapping…" onkeydown="if(event.key==='Enter')sendMappingChat()">
+        <button class="chat-send-btn" id="mapping-send-btn" onclick="sendMappingChat()">Send</button>
+      </div>
+    </div>
+  </div>
+  <div style="padding: var(--sp-3) var(--sp-6); border-top: 1px solid rgba(255,255,255,0.08); display: flex; gap: var(--sp-2);">
+    <button class="research-button" onclick="buildPitch()" id="mapping-build-btn" disabled style="flex: 1;">
+      <i class="ph ph-sparkle"></i> Pitch bauen lassen
+    </button>
+  </div>
 </div>
 
 
@@ -1444,11 +1709,19 @@ function saveEdits() {
 
 // ── SCREEN HELPERS ────────────────────────────────────────────────────────
 let _lastInput = null;
+let _currentProfile = null;
+let _profileChat = [];
+let _profileIterations = 0;
+let _currentMapping = null;
+let _mappingChat = [];
+let _mappingIterations = 0;
 
 function showInput(prefill) {
   document.getElementById('input-screen').style.display = 'flex';
   document.getElementById('loading-screen').style.display = 'none';
   document.getElementById('output-screen').style.display = 'none';
+  document.getElementById('prospect-profile-screen').style.display = 'none';
+  document.getElementById('mapping-draft-screen').style.display = 'none';
   if (prefill) {
     document.getElementById('contact-company').value = prefill.company || '';
     document.getElementById('contact-website').value = prefill.website || '';
@@ -1462,13 +1735,305 @@ function showLoading() {
   document.getElementById('input-screen').style.display = 'none';
   document.getElementById('loading-screen').style.display = 'flex';
   document.getElementById('output-screen').style.display = 'none';
+  document.getElementById('prospect-profile-screen').style.display = 'none';
+  document.getElementById('mapping-draft-screen').style.display = 'none';
 }
 
 function showOutput() {
   document.getElementById('input-screen').style.display = 'none';
   document.getElementById('loading-screen').style.display = 'none';
   document.getElementById('output-screen').style.display = 'block';
+  document.getElementById('prospect-profile-screen').style.display = 'none';
+  document.getElementById('mapping-draft-screen').style.display = 'none';
   window.scrollTo(0, 0);
+}
+
+function showProspectProfile() {
+  document.getElementById('input-screen').style.display = 'none';
+  document.getElementById('loading-screen').style.display = 'none';
+  document.getElementById('output-screen').style.display = 'none';
+  document.getElementById('prospect-profile-screen').style.display = 'flex';
+  document.getElementById('mapping-draft-screen').style.display = 'none';
+  window.scrollTo(0, 0);
+}
+
+function showMappingDraft() {
+  document.getElementById('input-screen').style.display = 'none';
+  document.getElementById('loading-screen').style.display = 'none';
+  document.getElementById('output-screen').style.display = 'none';
+  document.getElementById('prospect-profile-screen').style.display = 'none';
+  document.getElementById('mapping-draft-screen').style.display = 'flex';
+  window.scrollTo(0, 0);
+}
+
+// ── PROSPECT PROFILE STAGE ────────────────────────────────────────────────
+async function startResearch() {
+  const company = document.getElementById('contact-company').value.trim();
+  const website = document.getElementById('contact-website').value.trim();
+  const profile = loadProfile();
+
+  if (!company || !website) {
+    alert('Bitte gib den Unternehmesnamen und die Website ein.');
+    return;
+  }
+
+  _lastInput = { company, website };
+  _profileChat = [];
+  _profileIterations = 0;
+  _currentProfile = null;
+
+  showLoading();
+
+  try {
+    const res = await fetch(`${BACKEND_URL}/research`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-valantic-secret': sessionStorage.getItem('vauth_token')||'',
+      },
+      body: JSON.stringify({ company, website }),
+    });
+
+    if (res.status === 401) { handleAuthError(); return; }
+    if (!res.ok) throw new Error(`Backend ${res.status}: ${await res.text()}`);
+    const data = await res.json();
+    _currentProfile = data.profile;
+    _profileChat = [];
+    _profileIterations = 0;
+    renderProspectProfile();
+    showProspectProfile();
+  } catch (err) {
+    console.error('Research error:', err);
+    showInput();
+    alert('Error: ' + (err.message || JSON.stringify(err)));
+  }
+}
+
+function renderProspectProfile() {
+  const area = document.getElementById('profile-table-area');
+  if (!_currentProfile) { area.innerHTML = '<p>No profile data</p>'; return; }
+
+  let html = '<table class="profile-table">';
+  for (const [category, fields] of Object.entries(_currentProfile)) {
+    html += `<tr><td colspan="2" class="profile-category">${category}</td></tr>`;
+    for (const [fieldName, fieldData] of Object.entries(fields)) {
+      const value = fieldData?.value || '';
+      const assumption = fieldData?.assumption || false;
+      const assumptionNote = fieldData?.assumptionNote || '';
+      html += `<tr>
+        <td class="profile-field-label">${fieldName}</td>
+        <td class="profile-field-value">
+          <div>${value}</div>
+          ${assumption ? `<div class="profile-assumption">Annahme: ${assumptionNote}</div>` : ''}
+        </td>
+      </tr>`;
+    }
+  }
+  html += '</table>';
+  area.innerHTML = html;
+  document.getElementById('profile-next-btn').disabled = false;
+  renderProfileChat();
+}
+
+function renderProfileChat() {
+  const messagesArea = document.getElementById('profile-chat-messages');
+  messagesArea.innerHTML = _profileChat.map(msg => `
+    <div class="chat-message ${msg.role}">
+      <div class="msg-bubble">${escapeHtml(msg.content)}</div>
+    </div>
+  `).join('');
+  messagesArea.scrollTop = messagesArea.scrollHeight;
+}
+
+async function sendProfileChat() {
+  const input = document.getElementById('profile-chat-input');
+  const message = input.value.trim();
+  if (!message || _profileIterations >= 5) return;
+
+  _profileChat.push({ role: 'user', content: message });
+  renderProfileChat();
+  input.value = '';
+
+  document.getElementById('profile-send-btn').disabled = true;
+  document.getElementById('profile-next-btn').disabled = true;
+
+  try {
+    const res = await fetch(`${BACKEND_URL}/research`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-valantic-secret': sessionStorage.getItem('vauth_token')||'',
+      },
+      body: JSON.stringify({ profile: _currentProfile, message }),
+    });
+
+    if (!res.ok) throw new Error(`Backend ${res.status}`);
+    const data = await res.json();
+    _currentProfile = data.profile;
+    _profileIterations++;
+    _profileChat.push({ role: 'claude', content: `Profil aktualisiert. (${_profileIterations}/5)` });
+    renderProspectProfile();
+  } catch (err) {
+    console.error('Chat error:', err);
+    _profileChat.pop();
+    renderProfileChat();
+    alert('Error: ' + err.message);
+  } finally {
+    document.getElementById('profile-send-btn').disabled = _profileIterations >= 5;
+    document.getElementById('profile-next-btn').disabled = false;
+  }
+}
+
+// ── MAPPING DRAFT STAGE ────────────────────────────────────────────────────
+async function proceedToMapping() {
+  showLoading();
+  _mappingChat = [];
+  _mappingIterations = 0;
+  _currentMapping = null;
+
+  try {
+    const res = await fetch(`${BACKEND_URL}/mapping`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-valantic-secret': sessionStorage.getItem('vauth_token')||'',
+      },
+      body: JSON.stringify({ profile: _currentProfile }),
+    });
+
+    if (res.status === 401) { handleAuthError(); return; }
+    if (!res.ok) throw new Error(`Backend ${res.status}: ${await res.text()}`);
+    const data = await res.json();
+    _currentMapping = data.mapping;
+    renderMappingDraft();
+    showMappingDraft();
+  } catch (err) {
+    console.error('Mapping error:', err);
+    showProspectProfile();
+    alert('Error: ' + (err.message || JSON.stringify(err)));
+  }
+}
+
+function renderMappingDraft() {
+  const area = document.getElementById('mapping-content-area');
+  if (!_currentMapping) { area.innerHTML = '<p>No mapping data</p>'; return; }
+
+  const blocks = _currentMapping.pain_solution_blocks || [];
+  const narrative = _currentMapping.narrative || {};
+
+  let html = '<div class="mapping-narrative">';
+  html += `<div class="narrative-headline">${escapeHtml(narrative.headline_message || '')}</div>`;
+  if (narrative.top_3_priorities?.length) {
+    html += '<ul class="narrative-priorities">';
+    narrative.top_3_priorities.forEach(p => {
+      html += `<li>${escapeHtml(p)}</li>`;
+    });
+    html += '</ul>';
+  }
+  html += '</div>';
+
+  html += '<div class="mapping-cards">';
+  blocks.forEach(block => {
+    const fit = block.fit?.toLowerCase() || 'medium';
+    html += `<div class="mapping-card">
+      <div class="card-fit ${fit}">${escapeHtml(block.fit || 'Medium')}</div>
+      <div class="card-name">${escapeHtml(block.block_name || '')}</div>
+      <div class="card-situation">${escapeHtml(block.prospect_situation || '')}</div>
+      <div class="card-stripe">${escapeHtml(block.stripe_answer || '')}</div>
+      <div class="card-rationale">${escapeHtml(block.rationale || '')}</div>
+    </div>`;
+  });
+  html += '</div>';
+
+  area.innerHTML = html;
+  document.getElementById('mapping-build-btn').disabled = false;
+  renderMappingChat();
+}
+
+function renderMappingChat() {
+  const messagesArea = document.getElementById('mapping-chat-messages');
+  messagesArea.innerHTML = _mappingChat.map(msg => `
+    <div class="chat-message ${msg.role}">
+      <div class="msg-bubble">${escapeHtml(msg.content)}</div>
+    </div>
+  `).join('');
+  messagesArea.scrollTop = messagesArea.scrollHeight;
+}
+
+async function sendMappingChat() {
+  const input = document.getElementById('mapping-chat-input');
+  const message = input.value.trim();
+  if (!message || _mappingIterations >= 5) return;
+
+  _mappingChat.push({ role: 'user', content: message });
+  renderMappingChat();
+  input.value = '';
+
+  document.getElementById('mapping-send-btn').disabled = true;
+  document.getElementById('mapping-build-btn').disabled = true;
+
+  try {
+    const res = await fetch(`${BACKEND_URL}/mapping`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-valantic-secret': sessionStorage.getItem('vauth_token')||'',
+      },
+      body: JSON.stringify({ mapping: _currentMapping, message }),
+    });
+
+    if (!res.ok) throw new Error(`Backend ${res.status}`);
+    const data = await res.json();
+    _currentMapping = data.mapping;
+    _mappingIterations++;
+    _mappingChat.push({ role: 'claude', content: `Mapping aktualisiert. (${_mappingIterations}/5)` });
+    renderMappingDraft();
+  } catch (err) {
+    console.error('Chat error:', err);
+    _mappingChat.pop();
+    renderMappingChat();
+    alert('Error: ' + err.message);
+  } finally {
+    document.getElementById('mapping-send-btn').disabled = _mappingIterations >= 5;
+    document.getElementById('mapping-build-btn').disabled = false;
+  }
+}
+
+async function buildPitch() {
+  const company = _lastInput?.company || 'Prospect';
+  const website = _lastInput?.website || '';
+  const profile = loadProfile();
+
+  showLoading();
+
+  try {
+    const res = await fetch(`${BACKEND_URL}/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-valantic-secret': sessionStorage.getItem('vauth_token')||'',
+      },
+      body: JSON.stringify({ company, website, mappingDraft: _currentMapping, contact: profile }),
+    });
+
+    if (res.status === 401) { handleAuthError(); return; }
+    if (!res.ok) throw new Error(`Backend ${res.status}: ${await res.text()}`);
+    const data = await res.json();
+    saveToHistory({ company, website, data: data.story });
+    renderOutput(data.story, { company, website });
+    if (data.url) _lastPublishedUrl = data.url;
+  } catch (err) {
+    console.error('Generate error:', err);
+    showMappingDraft();
+    alert('Error: ' + (err.message || JSON.stringify(err)));
+  }
+}
+
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
 
 document.getElementById('input-screen').style.display = 'flex';
