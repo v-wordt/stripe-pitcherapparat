@@ -7,6 +7,9 @@
     "api/research.js": {
       "maxDuration": 60
     },
+    "api/research-category.js": {
+      "maxDuration": 60
+    },
     "api/mapping.js": {
       "maxDuration": 60
     }

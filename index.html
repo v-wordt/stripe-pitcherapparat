@@ -221,6 +221,38 @@
       color: rgba(255,255,255,0.3);
     }
 
+    #research-progress {
+      display: none;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      max-width: 520px;
+      margin-top: 8px;
+    }
+    .cat-chip {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.5);
+      transition: all 0.25s;
+    }
+    .cat-chip.loading {
+      border-color: var(--val-coral);
+      color: rgba(255,255,255,0.6);
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    .cat-chip.done {
+      border-color: #4caf50;
+      color: #4caf50;
+      animation: none;
+    }
+    .cat-chip.error {
+      border-color: rgba(255,100,100,0.5);
+      color: rgba(255,100,100,0.7);
+      animation: none;
+    }
+
     /* ── EDIT PANEL ── */
     .edit-backdrop {
       position: fixed; inset: 0;
@@ -1057,7 +1089,8 @@
 <div id="loading-screen">
   <div class="loading-ring"></div>
   <div class="loading-text" id="loading-msg">Intelligence Layer is thinking…</div>
-  <div class="loading-sub">Combining services across 3 CCs</div>
+  <div class="loading-sub" id="loading-sub">Combining services across 3 CCs</div>
+  <div id="research-progress"></div>
 </div>
 
 <!-- ══════════════════════════════════════════
@@ -1138,6 +1171,18 @@
 // ── CONFIG — update BACKEND_URL once Vercel is deployed ───────────────────
 const BACKEND_URL = 'https://stripe-pitcherapparat.vercel.app/api';
 const DEMO_API_KEY = null; // for local testing only: 'sk-ant-...'
+
+const CATEGORIES = [
+  'Grundinformationen',
+  'Geschäftstätigkeit',
+  'Grösse und Struktur',
+  'Produkte & Services',
+  'Finanzierung & Wachstum',
+  'Markt & Wettbewerb',
+  'Technologie & Infrastructure',
+  'Signale'
+];
+function catId(cat) { return cat.replace(/[^a-zA-Z0-9]/g, '_'); }
 
 // ── PROFILE (localStorage) ────────────────────────────────────────────────
 function loadProfile() {
@@ -1823,7 +1868,6 @@ function showMappingDraft() {
 async function startResearch() {
   const company = document.getElementById('contact-company').value.trim();
   const website = document.getElementById('contact-website').value.trim();
-  const profile = loadProfile();
 
   if (!company || !website) {
     alert('Bitte gib den Unternehmesnamen und die Website ein.');
@@ -1836,30 +1880,63 @@ async function startResearch() {
   _currentProfile = null;
 
   showLoading();
+  document.getElementById('loading-msg').textContent = 'Prospect wird recherchiert…';
+  document.getElementById('loading-sub').textContent = '8 Kategorien werden parallel recherchiert';
 
-  try {
-    const res = await fetch(`${BACKEND_URL}/research`, {
+  const progressEl = document.getElementById('research-progress');
+  progressEl.innerHTML = CATEGORIES.map(cat =>
+    `<span class="cat-chip loading" id="cat-chip-${catId(cat)}">${cat}</span>`
+  ).join('');
+  progressEl.style.display = 'flex';
+
+  const headers = {
+    'Content-Type': 'application/json',
+    'x-valantic-secret': sessionStorage.getItem('vauth_token') || ''
+  };
+
+  const assembled = {};
+  let authFailed = false;
+
+  const requests = CATEGORIES.map(category =>
+    fetch(`${BACKEND_URL}/research-category`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-valantic-secret': sessionStorage.getItem('vauth_token')||'',
-      },
-      body: JSON.stringify({ company, website }),
-    });
+      headers,
+      body: JSON.stringify({ company, website, category })
+    }).then(async res => {
+      if (res.status === 401) { authFailed = true; throw new Error('Unauthorized'); }
+      if (!res.ok) throw new Error(`Backend ${res.status}`);
+      const data = await res.json();
+      assembled[category] = (data.result && Object.keys(data.result).length > 0) ? data.result : {};
+      const chip = document.getElementById(`cat-chip-${catId(category)}`);
+      if (chip) chip.className = 'cat-chip done';
+    }).catch(err => {
+      console.error(`Category ${category} failed:`, err.message);
+      assembled[category] = {};
+      const chip = document.getElementById(`cat-chip-${catId(category)}`);
+      if (chip) chip.className = 'cat-chip error';
+    })
+  );
 
-    if (res.status === 401) { handleAuthError(); return; }
-    if (!res.ok) throw new Error(`Backend ${res.status}: ${await res.text()}`);
-    const data = await res.json();
-    _currentProfile = data.profile;
-    _profileChat = [];
-    _profileIterations = 0;
-    renderProspectProfile();
-    showProspectProfile();
-  } catch (err) {
-    console.error('Research error:', err);
+  await Promise.allSettled(requests);
+
+  progressEl.style.display = 'none';
+  document.getElementById('loading-msg').textContent = 'Intelligence Layer is thinking…';
+  document.getElementById('loading-sub').textContent = 'Combining services across 3 CCs';
+
+  if (authFailed) { handleAuthError(); return; }
+
+  const hasData = CATEGORIES.some(cat => Object.keys(assembled[cat] || {}).length > 0);
+  if (!hasData) {
     showInput();
-    alert('Error: ' + (err.message || JSON.stringify(err)));
+    alert('Alle Recherche-Anfragen sind fehlgeschlagen. Bitte erneut versuchen.');
+    return;
   }
+
+  _currentProfile = assembled;
+  _profileChat = [];
+  _profileIterations = 0;
+  renderProspectProfile();
+  showProspectProfile();
 }
 
 function renderProspectProfile() {
