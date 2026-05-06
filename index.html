@@ -1895,36 +1895,56 @@ async function startResearch() {
   };
 
   const assembled = {};
-  const halfsDone = {};
-  CATEGORIES.forEach(cat => { assembled[cat] = {}; halfsDone[cat] = { done: 0, errors: 0 }; });
+  CATEGORIES.forEach(cat => { assembled[cat] = {}; });
   let authFailed = false;
 
-  const requests = CATEGORIES.flatMap(category =>
-    [0, 1].map(half =>
-      fetch(`${BACKEND_URL}/research-category`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ company, website, category, half })
-      }).then(async res => {
+  // Fetch Signale field list so we can fire one Haiku per field
+  let signaleFields = [];
+  try {
+    const fieldsRes = await fetch(`${BACKEND_URL}/research-fields`, { headers });
+    if (fieldsRes.ok) {
+      const fieldsData = await fieldsRes.json();
+      signaleFields = fieldsData.categories?.['Signale'] || [];
+    }
+  } catch (e) {
+    console.warn('Could not fetch Signale field list, falling back to halves:', e.message);
+  }
+
+  function makeRequest(category, body, totalForCat) {
+    const tracker = makeRequest._t;
+    if (!tracker[category]) tracker[category] = { done: 0, errors: 0, total: totalForCat };
+    return fetch(`${BACKEND_URL}/research-category`, { method: 'POST', headers, body: JSON.stringify(body) })
+      .then(async res => {
         if (res.status === 401) { authFailed = true; throw new Error('Unauthorized'); }
         if (!res.ok) throw new Error(`Backend ${res.status}`);
         const data = await res.json();
         Object.assign(assembled[category], data.result || {});
-        halfsDone[category].done++;
-        if (halfsDone[category].done + halfsDone[category].errors === 2) {
+        tracker[category].done++;
+        if (tracker[category].done + tracker[category].errors === tracker[category].total) {
           const chip = document.getElementById(`cat-chip-${catId(category)}`);
           if (chip) chip.className = 'cat-chip done';
         }
       }).catch(err => {
-        console.error(`Category ${category} half ${half} failed:`, err.message);
-        halfsDone[category].errors++;
-        if (halfsDone[category].done + halfsDone[category].errors === 2) {
+        console.error(`${category} request failed:`, err.message);
+        tracker[category].errors++;
+        if (tracker[category].done + tracker[category].errors === tracker[category].total) {
           const chip = document.getElementById(`cat-chip-${catId(category)}`);
-          if (chip) chip.className = halfsDone[category].done > 0 ? 'cat-chip done' : 'cat-chip error';
+          if (chip) chip.className = tracker[category].done > 0 ? 'cat-chip done' : 'cat-chip error';
         }
-      })
-    )
-  );
+      });
+  }
+  makeRequest._t = {};
+
+  const requests = CATEGORIES.flatMap(category => {
+    if (category === 'Signale' && signaleFields.length > 0) {
+      return signaleFields.map((_, fieldIndex) =>
+        makeRequest(category, { company, website, category, fieldIndex }, signaleFields.length)
+      );
+    }
+    return [0, 1].map(half =>
+      makeRequest(category, { company, website, category, half }, 2)
+    );
+  });
 
   await Promise.allSettled(requests);
 

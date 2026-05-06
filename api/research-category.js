@@ -65,7 +65,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { company, website, category, half } = req.body || {};
+  const { company, website, category, half, fieldIndex } = req.body || {};
   if (!company || !website || !category) {
     return res.status(400).json({ error: 'company, website, and category required' });
   }
@@ -78,7 +78,8 @@ export default async function handler(req, res) {
     }
 
     let fields = allFields;
-    if (half === 0) fields = allFields.slice(0, Math.ceil(allFields.length / 2));
+    if (fieldIndex !== undefined) fields = allFields[fieldIndex] ? [allFields[fieldIndex]] : [];
+    else if (half === 0) fields = allFields.slice(0, Math.ceil(allFields.length / 2));
     else if (half === 1) fields = allFields.slice(Math.ceil(allFields.length / 2));
 
     const fieldList = fields.map(f => `  - ${f}`).join('\n');
