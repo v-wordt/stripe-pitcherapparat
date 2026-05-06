@@ -152,6 +152,15 @@ Do 1–2 targeted web searches and/or fetch relevant pages, then synthesise.`;
 
     console.log(`[research-category] ${category} research took ${Date.now() - t0}ms`);
 
+    // If the loop ended with tool results as the last message, get one bridging
+    // assistant response — otherwise the synthesis prompt creates consecutive user messages.
+    if (messages[messages.length - 1].role === 'user') {
+      const bridge = await client.messages.create({
+        model: MODEL, max_tokens: 512, system: systemPrompt, messages
+      });
+      messages.push({ role: 'assistant', content: bridge.content });
+    }
+
     const synthesisPrompt = `Based on your research, return ONLY the JSON for the "${category}" category. No prose, no markdown fences.
 
 LENGTH LIMITS: "value": max 20 words (addresses/names/URLs may be longer). "assumptionNote": max 20 words. "source": one URL, "web_search:<q>", "estimate", "training_knowledge", or null.
@@ -188,6 +197,6 @@ ${fieldKeys}
     return res.status(200).json({ category, result });
   } catch (err) {
     console.error(`[research-category] ${category} error:`, err.message);
-    return res.status(200).json({ category, result: {} });
+    return res.status(500).json({ error: err.message });
   }
 }

@@ -1910,7 +1910,7 @@ async function startResearch() {
     console.warn('Could not fetch Signale field list, falling back to halves:', e.message);
   }
 
-  function makeRequest(category, body, totalForCat) {
+  function makeRequest(category, body, totalForCat, retriesLeft = 1) {
     const tracker = makeRequest._t;
     if (!tracker[category]) tracker[category] = { done: 0, errors: 0, total: totalForCat };
     return fetch(`${BACKEND_URL}/research-category`, { method: 'POST', headers, body: JSON.stringify(body) })
@@ -1925,7 +1925,11 @@ async function startResearch() {
           if (chip) chip.className = 'cat-chip done';
         }
       }).catch(err => {
-        console.error(`${category} request failed:`, err.message);
+        if (err.message !== 'Unauthorized' && retriesLeft > 0) {
+          console.warn(`${category} request failed (${err.message}), retrying in 3s…`);
+          return new Promise(r => setTimeout(r, 3000)).then(() => makeRequest(category, body, totalForCat, retriesLeft - 1));
+        }
+        console.error(`${category} request failed permanently:`, err.message);
         tracker[category].errors++;
         if (tracker[category].done + tracker[category].errors === tracker[category].total) {
           const chip = document.getElementById(`cat-chip-${catId(category)}`);
