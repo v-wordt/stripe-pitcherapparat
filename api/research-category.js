@@ -65,17 +65,21 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { company, website, category } = req.body || {};
+  const { company, website, category, half } = req.body || {};
   if (!company || !website || !category) {
     return res.status(400).json({ error: 'company, website, and category required' });
   }
 
   try {
     const t0 = Date.now();
-    const fields = await fetchCategoryFields(category);
-    if (fields.length === 0) {
+    const allFields = await fetchCategoryFields(category);
+    if (allFields.length === 0) {
       return res.status(200).json({ category, result: {} });
     }
+
+    let fields = allFields;
+    if (half === 0) fields = allFields.slice(0, Math.ceil(allFields.length / 2));
+    else if (half === 1) fields = allFields.slice(Math.ceil(allFields.length / 2));
 
     const fieldList = fields.map(f => `  - ${f}`).join('\n');
     const fieldKeys = fields.map(f => `    "${f}": { ... }`).join(',\n');

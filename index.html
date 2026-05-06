@@ -1895,26 +1895,35 @@ async function startResearch() {
   };
 
   const assembled = {};
+  const halfsDone = {};
+  CATEGORIES.forEach(cat => { assembled[cat] = {}; halfsDone[cat] = { done: 0, errors: 0 }; });
   let authFailed = false;
 
-  const requests = CATEGORIES.map(category =>
-    fetch(`${BACKEND_URL}/research-category`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ company, website, category })
-    }).then(async res => {
-      if (res.status === 401) { authFailed = true; throw new Error('Unauthorized'); }
-      if (!res.ok) throw new Error(`Backend ${res.status}`);
-      const data = await res.json();
-      assembled[category] = (data.result && Object.keys(data.result).length > 0) ? data.result : {};
-      const chip = document.getElementById(`cat-chip-${catId(category)}`);
-      if (chip) chip.className = 'cat-chip done';
-    }).catch(err => {
-      console.error(`Category ${category} failed:`, err.message);
-      assembled[category] = {};
-      const chip = document.getElementById(`cat-chip-${catId(category)}`);
-      if (chip) chip.className = 'cat-chip error';
-    })
+  const requests = CATEGORIES.flatMap(category =>
+    [0, 1].map(half =>
+      fetch(`${BACKEND_URL}/research-category`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ company, website, category, half })
+      }).then(async res => {
+        if (res.status === 401) { authFailed = true; throw new Error('Unauthorized'); }
+        if (!res.ok) throw new Error(`Backend ${res.status}`);
+        const data = await res.json();
+        Object.assign(assembled[category], data.result || {});
+        halfsDone[category].done++;
+        if (halfsDone[category].done + halfsDone[category].errors === 2) {
+          const chip = document.getElementById(`cat-chip-${catId(category)}`);
+          if (chip) chip.className = 'cat-chip done';
+        }
+      }).catch(err => {
+        console.error(`Category ${category} half ${half} failed:`, err.message);
+        halfsDone[category].errors++;
+        if (halfsDone[category].done + halfsDone[category].errors === 2) {
+          const chip = document.getElementById(`cat-chip-${catId(category)}`);
+          if (chip) chip.className = halfsDone[category].done > 0 ? 'cat-chip done' : 'cat-chip error';
+        }
+      })
+    )
   );
 
   await Promise.allSettled(requests);
