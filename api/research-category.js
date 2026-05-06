@@ -37,23 +37,15 @@ async function fetchWithJina(url) {
   } catch { return null; }
 }
 
-function isInvalidToolError(err) {
-  const msg = err?.message ? String(err.message) : '';
-  return /web_search|invalid.*tool|unsupported|unknown.*tool/i.test(msg) &&
-         /400|invalid_request_error/i.test(msg);
-}
-
 const FETCH_URL_TOOL = {
   name: 'fetch_url',
-  description: 'Fetch the readable text of a URL via Jina Reader. Use for company pages (/impressum, /about, /investors, /press), Wikipedia, news articles, and regulatory filings.',
+  description: 'Fetch the readable text of a URL via Jina Reader. Use for company pages (/impressum, /about, /investors, /press, /news, /blog, /careers), Wikipedia (DE+EN), news articles, and regulatory filings.',
   input_schema: {
     type: 'object',
     properties: { url: { type: 'string', description: 'Absolute URL to fetch' } },
     required: ['url']
   }
 };
-
-const WEB_SEARCH_TOOL = { type: 'web_search_20250305', name: 'web_search', max_uses: 2 };
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -85,11 +77,20 @@ export default async function handler(req, res) {
     const fieldList = fields.map(f => `  - ${f}`).join('\n');
     const fieldKeys = fields.map(f => `    "${f}": { ... }`).join(',\n');
 
-    const systemPrompt = `You are a B2B prospect research analyst. Research ONLY the "${category}" fields listed below for the given company.
+    // Derive starting URLs from the company website so Haiku knows where to fetch
+    let origin = '';
+    try { origin = new URL(website).origin; } catch { origin = website; }
+    const startUrls = [website, `${origin}/impressum`, `${origin}/about`].join('\n');
+
+    const systemPrompt = `You are a B2B prospect research analyst. Use fetch_url to read company pages, then fill the fields listed below.
+
+Starting URLs to fetch (fetch the ones most relevant to your fields):
+${startUrls}
+Also useful: ${origin}/news, ${origin}/press, ${origin}/investors, ${origin}/careers, and Wikipedia (search: ${company}).
 
 Source priority:
 1. Company-controlled pages: homepage, /impressum, /about, /investors, /press, /careers.
-2. Authoritative third parties: Wikipedia (DE+EN), Handelsregister, regulatory filings, named press (Handelsblatt, FAZ, Reuters, Bloomberg, NZZ, etc.).
+2. Authoritative third parties: Wikipedia (DE+EN), Handelsregister, regulatory filings, named press.
 3. Lower-tier signals: LinkedIn, Crunchbase, news aggregators.
 
 Decision ladder (per field):
@@ -98,65 +99,46 @@ Decision ladder (per field):
 3. Last resort only → value: "Nicht öffentlich verfügbar", confidence: "low", source: null. Must be rare.
 
 Fields to populate (${category}):
-${fieldList}
+${fieldList}`;
 
-Do 1–2 targeted web searches and/or fetch relevant pages, then synthesise.`;
-
-    const messages = [{ role: 'user', content: `Company: ${company}\nWebsite: ${website}\n\nResearch the "${category}" fields listed in your instructions.` }];
-    let useWebSearch = true;
-    let lastResponse;
+    const messages = [{ role: 'user', content: `Company: ${company}\nWebsite: ${website}\n\nFetch the relevant pages and fill the "${category}" fields listed in your instructions.` }];
 
     for (let turn = 0; turn < MAX_TURNS; turn++) {
-      const tools = useWebSearch ? [WEB_SEARCH_TOOL, FETCH_URL_TOOL] : [FETCH_URL_TOOL];
-      let response;
-      try {
-        response = await client.messages.create({
-          model: MODEL,
-          max_tokens: 2048,
-          system: systemPrompt,
-          tools,
-          messages
-        });
-      } catch (err) {
-        if (useWebSearch && isInvalidToolError(err)) {
-          useWebSearch = false;
-          turn--;
-          continue;
-        }
-        throw err;
-      }
+      const response = await client.messages.create({
+        model: MODEL,
+        max_tokens: 2048,
+        system: systemPrompt,
+        tools: [FETCH_URL_TOOL],
+        messages
+      });
 
       messages.push({ role: 'assistant', content: response.content });
-      lastResponse = response;
-
-      if (response.stop_reason === 'pause_turn') continue;
 
       const fetchCalls = response.content.filter(b => b.type === 'tool_use' && b.name === 'fetch_url');
-      if (fetchCalls.length > 0) {
-        const results = await Promise.all(fetchCalls.map(async block => {
-          const url = block.input?.url;
-          if (!url) return { type: 'tool_result', tool_use_id: block.id, content: 'Error: missing url', is_error: true };
-          const text = await fetchWithJina(url);
-          return {
-            type: 'tool_result',
-            tool_use_id: block.id,
-            content: text ? `Content of ${url}:\n\n${text}` : `Failed to fetch ${url}`,
-            is_error: !text
-          };
-        }));
-        messages.push({ role: 'user', content: results });
-      } else {
-        break;
-      }
+      if (fetchCalls.length === 0) break;
+
+      const results = await Promise.all(fetchCalls.map(async block => {
+        const url = block.input?.url;
+        if (!url) return { type: 'tool_result', tool_use_id: block.id, content: 'Error: missing url', is_error: true };
+        const text = await fetchWithJina(url);
+        return {
+          type: 'tool_result',
+          tool_use_id: block.id,
+          content: text ? `Content of ${url}:\n\n${text}` : `Failed to fetch ${url}`,
+          is_error: !text
+        };
+      }));
+      messages.push({ role: 'user', content: results });
     }
 
     console.log(`[research-category] ${category} research took ${Date.now() - t0}ms`);
 
-    // If the loop ended with tool results as the last message, get one bridging
-    // assistant response — otherwise the synthesis prompt creates consecutive user messages.
+    // If the loop ended with tool results as the last message (fetch_url in the final turn),
+    // add a bridging call so the synthesis prompt isn't a consecutive user message.
     if (messages[messages.length - 1].role === 'user') {
       const bridge = await client.messages.create({
-        model: MODEL, max_tokens: 512, system: systemPrompt, messages
+        model: MODEL, max_tokens: 512, system: systemPrompt,
+        tools: [FETCH_URL_TOOL], messages
       });
       messages.push({ role: 'assistant', content: bridge.content });
     }
