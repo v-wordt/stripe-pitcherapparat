@@ -1448,7 +1448,8 @@ function _rebuildOutput() {
       </div>
       <div style="font-size:15px;font-weight:700;color:#100c2a;margin-bottom:8px;line-height:1.35;">${b.block_name}</div>
       <div style="font-size:13px;color:#888;font-style:italic;margin-bottom:12px;line-height:1.6;">"${b.prospect_situation}"</div>
-      <div style="font-size:14px;color:#555;line-height:1.7;flex:1;margin-bottom:12px;"><strong style="color:#100c2a;">Stripe: </strong>${b.stripe_answer}</div>
+      <div style="font-size:14px;color:#555;line-height:1.7;margin-bottom:8px;"><strong style="color:#100c2a;">Stripe: </strong>${b.stripe_answer}</div>
+      ${b.valantic_consulting ? `<div style="font-size:14px;color:#555;line-height:1.7;flex:1;margin-bottom:12px;"><strong style="color:#193773;">valantic: </strong>${b.valantic_consulting}</div>` : ''}
       <div style="font-size:12px;font-weight:600;color:#193773;border-top:1px solid #f0eeee;padding-top:12px;margin-top:auto;">→ ${b.pitch_angle}</div>
     </div>`).join('');
 
@@ -1512,28 +1513,29 @@ function _rebuildOutput() {
     <div style="background:#f5f3f0;">
       <div style="max-width:1100px;margin:0 auto;padding:52px var(--sp-6) 80px;">
 
+        ${snapshotRows ? `
         <div class="scroll-reveal" style="margin-bottom:44px;">
           <div style="font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#ff4b4b;margin-bottom:14px;">Prospect Snapshot</div>
           <div style="background:white;border-radius:16px;padding:4px 28px;box-shadow:0 1px 6px rgba(0,0,0,.06);">
             ${snapshotRows}
           </div>
-        </div>
+        </div>` : ''}
 
         <div class="scroll-reveal" style="margin-bottom:44px;">
-          <div style="font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#ff4b4b;margin-bottom:14px;">Where Stripe wins for ${input.company}</div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#ff4b4b;margin-bottom:14px;">Warum Stripe für ${input.company}</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;">${blockCards}</div>
         </div>
 
         ${openItemsHtml}
 
         <div class="scroll-reveal" style="margin-bottom:32px;">
-          <div style="font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#ff4b4b;margin-bottom:14px;">Next Step</div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#ff4b4b;margin-bottom:14px;">Nächster Schritt</div>
           <div style="background:white;border-radius:16px;padding:28px 32px;box-shadow:0 1px 6px rgba(0,0,0,.06);">
             <p style="font-size:15px;color:#444;line-height:1.75;margin-bottom:22px;">${data.next_step||''}</p>
             <a href="mailto:${profile.email}" style="display:inline-flex;align-items:center;gap:8px;padding:13px 26px;background:linear-gradient(135deg,#ff4b4b,#ff744f);color:white;font-family:'Maven Pro',sans-serif;font-weight:700;font-size:14px;border-radius:99px;text-decoration:none;transition:transform .15s,box-shadow .15s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(255,75,75,.35)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
               <i class="ph ph-calendar-check" style="font-size:15px;"></i> ${data.cta_label||'Book 30 minutes'}
             </a>
-            <div style="font-size:11px;color:#bbb;margin-top:10px;">No deck. No pitch. Just a conversation.</div>
+            <div style="font-size:11px;color:#bbb;margin-top:10px;">Kein Deck. Kein Pitch. Einfach ein Gespräch.</div>
           </div>
         </div>
 
@@ -1545,7 +1547,7 @@ function _rebuildOutput() {
             <a href="mailto:${profile.email}" style="font-size:14px;color:#ff4b4b;font-weight:600;text-decoration:none;">${profile.email}</a>
           </div>
           <a href="mailto:${profile.email}" style="display:inline-flex;align-items:center;gap:7px;padding:10px 20px;background:#f5f3f0;color:#100c2a;font-family:'Maven Pro',sans-serif;font-weight:700;font-size:13px;border-radius:99px;text-decoration:none;" onmouseover="this.style.background='#ebe9e4'" onmouseout="this.style.background='#f5f3f0'">
-            <i class="ph ph-envelope" style="font-size:14px;"></i> Send a message
+            <i class="ph ph-envelope" style="font-size:14px;"></i> Nachricht senden
           </a>
         </div>
 

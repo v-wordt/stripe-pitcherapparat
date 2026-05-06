@@ -99,43 +99,36 @@ Key value drivers for prospects:
 `;
 
 const PITCH_OUTPUT_FORMAT = `
-After researching the company, output ONLY valid JSON — no markdown fences, no prose, no explanation.
+Nach der Recherche gibst du NUR valides JSON aus — keine Markdown-Fences, keine Prosa, keine Erklärungen.
 
 {
-  "prospect_snapshot": {
-    "core_business": "industry + core service/product + key markets (max 12 words)",
-    "size_scale": "headcount range + revenue estimate (max 8 words)",
-    "business_model": "B2B/B2C/marketplace + pricing type (max 8 words)",
-    "current_payment_stack": "known or estimated current PSP/checkout setup (max 10 words)",
-    "strategic_signals": "the single most Stripe-relevant recent signal for this company (max 14 words)"
-  },
   "pain_solution_blocks": [
     {
-      "block_name": "3-5 word pain theme title",
-      "prospect_situation": "1 sentence pain in prospect language, specific to them (max 16 words)",
-      "stripe_answer": "Stripe product(s) + how valantic implements it for them (max 15 words)",
+      "block_name": "3-5 Wörter Thementitel auf Deutsch",
+      "prospect_situation": "1 Satz Herausforderung aus Sicht des Unternehmens, konkret und spezifisch (max. 18 Wörter)",
+      "stripe_answer": "Stripe-Produkt(e) + konkreter Nutzen für dieses Unternehmen (max. 16 Wörter)",
+      "valantic_consulting": "Wie valantic die Implementierung begleitet und welchen Mehrwert valantic konkret liefert (max. 14 Wörter)",
       "fit": "High",
-      "rationale": "why THIS company specifically would benefit (max 12 words)",
-      "pitch_angle": "4-6 word compelling headline for this pain block"
+      "pitch_angle": "4-6 Wörter prägnante Überschrift für diesen Block auf Deutsch"
     }
   ],
   "narrative": {
-    "headline_message": "1 punchy sentence capturing Stripe + valantic core value for THIS prospect (max 15 words)",
-    "headline_highlight": "2-3 exact words from headline_message to visually highlight",
+    "headline_message": "1 prägnanter Satz, der den Kernwert von Stripe + valantic für dieses Unternehmen erfasst (max. 15 Wörter, auf Deutsch)",
+    "headline_highlight": "2-3 exakte Wörter aus headline_message zum visuellen Hervorheben",
     "top_3_priorities": ["block_name_1", "block_name_2", "block_name_3"]
   },
-  "open_items": ["1 thing the sales team should verify before sending this pitch"],
-  "next_step": "Concrete next action specific to this company and their situation (max 20 words)",
-  "cta_label": "4-6 words action-oriented CTA"
+  "next_step": "Konkreter nächster Schritt, spezifisch für dieses Unternehmen und ihre Situation (max. 20 Wörter, auf Deutsch)",
+  "cta_label": "4-6 Wörter handlungsorientierter CTA auf Deutsch"
 }
 
-Rules:
-- Exactly 3 pain_solution_blocks
-- Fit = High, Medium, or Low based on evidence found
-- Never name competitors directly
-- Every claim grounded in what you found about this company
-- The pitch sells Stripe products + valantic implementation consulting
-- Make it feel written specifically for this company — zero generic boilerplate
+Regeln:
+- Genau 3 pain_solution_blocks
+- Fit = High, Medium oder Low basierend auf gefundenen Belegen
+- Niemals Wettbewerber direkt benennen
+- Jede Aussage basiert auf recherchierten Fakten über dieses Unternehmen
+- Der Pitch verkauft Stripe-Produkte + valantic-Implementierungsberatung
+- Sprich das Unternehmen direkt an — kein generischer Boilerplate
+- Alles auf Deutsch, Sie-Form
 `;
 
 const FETCH_URL_TOOL = {
@@ -187,15 +180,16 @@ function parseJson(text) {
 }
 
 async function generateQuickPitch(company, searchDe, searchEn) {
-  const systemPrompt = `You are an expert B2B sales strategist for valantic — a Stripe Services Implementation Specialized Partner. Research a prospect company and generate a highly personalized pitch to sell Stripe products + valantic implementation consulting.
+  const systemPrompt = `Du bist ein erfahrener B2B-Vertriebsstratege bei valantic — einem Stripe Services Implementation Specialized Partner. Recherchiere das Unternehmen und erstelle einen hochpersonalisierten Pitch, der direkt an das Unternehmen gerichtet ist (nicht an das Sales-Team). Der Pitch soll Stripe-Produkte und valantic-Implementierungsberatung verkaufen.
 
 ${VALANTIC_STRIPE_KNOWLEDGE}
 
-Research process:
-1. Use web_search to find: core business, industry, size, revenue, current payment/checkout setup, recent strategic news and signals.
-2. Use fetch_url to read key pages: homepage, /about, Wikipedia, press releases, recent news articles.
-3. After 2-3 research turns, generate the pitch JSON. Focus on what makes this company a strong Stripe + valantic fit.
-4. Look specifically for: payment fragmentation, digital transformation signals, billing complexity, international expansion plans, new business models, tech stack signals.`;
+Recherche-Prozess:
+1. Nutze web_search um zu finden: Kerngeschäft, Branche, Größe, Umsatz, aktuelle Zahlungsinfrastruktur, strategische Neuigkeiten und Signale.
+2. Nutze fetch_url für Schlüsselseiten: Homepage, /about, Wikipedia, Pressemitteilungen, aktuelle Nachrichtenartikel.
+3. Nach 2-3 Recherche-Runden erstelle das Pitch-JSON. Fokus auf den konkreten Stripe + valantic Fit für dieses Unternehmen.
+4. Achte besonders auf: Zahlungsfragmentierung, Digitalisierungssignale, Abrechnungskomplexität, internationale Expansionspläne, neue Geschäftsmodelle, Tech-Stack-Signale.
+5. Schreibe alles auf Deutsch, in der Sie-Form, direkt an das Unternehmen gerichtet — als würde das Unternehmen den Pitch lesen, nicht der Vertrieb.`;
 
   const seedContent = [
     searchDe ? `--- WEB SEARCH (DE) ---\n${searchDe}` : null,
