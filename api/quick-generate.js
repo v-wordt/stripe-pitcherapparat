@@ -43,7 +43,7 @@ const VALANTIC_STRIPE_KNOWLEDGE = `
 valantic is Europe's fastest-growing Digital Consulting, Solutions and Software company.
 - 4,300 employees, 50+ locations, 500+ clients, 100+ awards
 - Forbes 2023 World's Best Management Consulting Firms; multiple "TOP Beratung" & "Beste Mittelstandsdienstleister" awards
-- Stripe Services Implementation Specialized Partner — first specialized Stripe partner in the DACH region
+- Stripe Services Implementation Specialized Partner, first specialized Stripe partner in the DACH region
 - 30+ Stripe experts, 50+ Stripe payment and billing projects across industries
 - Stripe project track record: Universal Music Group, Etsy, N26, HSBC, reMarkable, Payoneer, Awin, StreamAMG, Copecart
 - Clients include: AXA, Red Bull, Siemens, Zeiss, Bayer, Pfizer, Allianz, Deutsche Bank, Lufthansa, BMW, Bosch, Swarovski, Scout24, GEBERIT, Intersport, Zurich, Coop, DeepL, and many more
@@ -59,12 +59,23 @@ Key capabilities:
 - Full-stack Development (no/low/high code); Program & Project Management
 - Business & IT System Architecture; Data Analytics & AI; M&A Advisory; Go2Market
 
-Service packages:
-- Stripe Discovery Workshop: 2–4 weeks prep + 1-day workshop co-delivered with Stripe experts + 1 week synthesis. OTC process analysis, pain point identification, ROI assessment, implementation roadmap.
-- Success & Readiness Workshop: 2-day Stripe Billing readiness assessment; gap analysis, path-to-green execution plan.
-- Implementation Package S: 5–8 weeks. Payments + Radar. €10,000–25,000. Standard payment integration, refunds, reporting.
-- Implementation Package M: 8–12 weeks. Payments + Billing + Connect + Radar. €30,000–45,000. Marketplaces, platforms, billing/invoicing, subscriptions.
-- Implementation Package L: 10–16 weeks. Full transformation incl. Migration + ERP integration. €45,000–65,000.
+Entry points and service packages:
+
+Stripe Discovery Workshop (empfohlener erster Schritt für die meisten Prospects):
+- Ablauf: 2–4 Wochen Vorbereitung, 1-tägiger Workshop vor Ort, co-facilitiert von valantic und Stripe-Experten, 1 Woche Synthese
+- Ergebnisse: OTC-Prozessanalyse, Pain-Point-Mapping, ROI-Business-Case, priorisierter Implementierungs-Roadmap
+- Ideal für: Unternehmen, die Stripe evaluieren oder ihre Zahlungsinfrastruktur modernisieren wollen
+- Geringes Risiko, geringes Commitment; konkreter Fahrplan und ROI-Justifikation als Output
+
+Success & Readiness Workshop (für Billing-fokussierte Prospects):
+- Ablauf: 2 Tage
+- Ergebnisse: Stripe-Billing-Readiness-Assessment, Gap-Analyse, Path-to-Green-Execution-Plan
+- Ideal für: Unternehmen, die Abonnement-Billing, nutzungsbasierte Preismodelle oder Legacy-Billing-Migration planen
+
+Implementierungspakete (nach Workshop):
+- Paket S: 5–8 Wochen, Payments + Radar, 10.000–25.000 EUR. Standard-Integration, Refunds, Reporting.
+- Paket M: 8–12 Wochen, Payments + Billing + Connect + Radar, 30.000–45.000 EUR. Marktplaetze, Plattformen, Abonnements.
+- Paket L: 10–16 Wochen, vollstaendige Transformation inkl. Migration + ERP-Integration, 45.000–65.000 EUR.
 
 ## Stripe platform (what valantic sells and implements)
 Stripe: global payment platform. $1.4 Trillion processed annually · 99.999% uptime · $105bn valuation
@@ -127,8 +138,10 @@ Regeln:
 - Niemals Wettbewerber direkt benennen
 - Jede Aussage basiert auf recherchierten Fakten über dieses Unternehmen
 - Der Pitch verkauft Stripe-Produkte + valantic-Implementierungsberatung
-- Sprich das Unternehmen direkt an — kein generischer Boilerplate
+- Sprich das Unternehmen direkt an, kein generischer Boilerplate
 - Alles auf Deutsch, Sie-Form
+- Keine Gedankenstriche (--) im Output verwenden; ersetze sie durch Kommas, Doppelpunkte oder neue Saetze
+- next_step empfiehlt konkret den Stripe Discovery Workshop oder Success & Readiness Workshop als ersten Schritt, abgestimmt auf die Situation des Unternehmens
 `;
 
 const FETCH_URL_TOOL = {

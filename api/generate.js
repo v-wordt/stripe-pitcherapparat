@@ -213,7 +213,7 @@ Output ONLY valid JSON, no markdown, no explanation:
   "cta_label": "4-6 words"
 }
 
-Rules: 3 pain blocks only. Fit = High/Medium/Low. Never name competitors. Ground claims in what you know about this company.`;
+Rules: 3 pain blocks only. Fit = High/Medium/Low. Never name competitors. Ground claims in what you know about this company. Never use em-dashes (--); use commas, colons, or new sentences instead. next_step should recommend the Stripe Discovery Workshop or Success & Readiness Workshop as a concrete first move.`;
 }
 
 function buildHTML(data, input, contact) {
