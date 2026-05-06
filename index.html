@@ -1061,10 +1061,6 @@
         <label>Namen des Unternehmens</label>
         <input type="text" id="contact-company" placeholder="z.B. REWE Group" />
       </div>
-      <div class="form-group">
-        <label>Website des Unternehmens</label>
-        <input type="text" id="contact-website" placeholder="z.B. https://www.rewe.de" />
-      </div>
     </div>
 
     <button class="generate-btn" onclick="startResearch()">
@@ -1183,6 +1179,31 @@ const CATEGORIES = [
   'Signale'
 ];
 function catId(cat) { return cat.replace(/[^a-zA-Z0-9]/g, '_'); }
+
+const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1Okk8GvpMxNpAimn6Z1Dkt2lAzj3Qd8IM/export?format=csv&gid=886669856';
+window._categoryFields = {};
+
+async function initCategoryFields() {
+  try {
+    const res = await fetch(SHEET_CSV_URL);
+    const text = await res.text();
+    const grouped = {};
+    const lines = text.trim().split('\n').map(l => l.split(','));
+    for (let i = 1; i < lines.length; i++) {
+      const [, info, typ] = lines[i];
+      if (!info || !info.trim()) continue;
+      const field = info.trim().replace(/^"(.+)"$/, '$1');
+      const category = typ ? typ.trim().replace(/^"(.+)"$/, '$1') : null;
+      if (!category) continue;
+      if (!grouped[category]) grouped[category] = [];
+      grouped[category].push(field);
+    }
+    window._categoryFields = grouped;
+    console.log('[init] category fields loaded:', Object.keys(grouped).map(k => `${k}(${grouped[k].length})`).join(', '));
+  } catch (e) {
+    console.warn('[init] could not load category fields:', e.message);
+  }
+}
 
 // ── PROFILE (localStorage) ────────────────────────────────────────────────
 function loadProfile() {
@@ -1867,21 +1888,20 @@ function showMappingDraft() {
 // ── PROSPECT PROFILE STAGE ────────────────────────────────────────────────
 async function startResearch() {
   const company = document.getElementById('contact-company').value.trim();
-  const website = document.getElementById('contact-website').value.trim();
 
-  if (!company || !website) {
-    alert('Bitte gib den Unternehmesnamen und die Website ein.');
+  if (!company) {
+    alert('Bitte gib den Unternehmensnamen ein.');
     return;
   }
 
-  _lastInput = { company, website };
+  _lastInput = { company };
   _profileChat = [];
   _profileIterations = 0;
   _currentProfile = null;
 
   showLoading();
   document.getElementById('loading-msg').textContent = 'Prospect wird recherchiert…';
-  document.getElementById('loading-sub').textContent = '8 Kategorien werden parallel recherchiert';
+  document.getElementById('loading-sub').textContent = 'Kategorien werden parallel recherchiert';
 
   const progressEl = document.getElementById('research-progress');
   progressEl.innerHTML = CATEGORIES.map(cat =>
@@ -1898,17 +1918,7 @@ async function startResearch() {
   CATEGORIES.forEach(cat => { assembled[cat] = {}; });
   let authFailed = false;
 
-  // Fetch Signale field list so we can fire one Haiku per field
-  let signaleFields = [];
-  try {
-    const fieldsRes = await fetch(`${BACKEND_URL}/research-fields`, { headers });
-    if (fieldsRes.ok) {
-      const fieldsData = await fieldsRes.json();
-      signaleFields = fieldsData.categories?.['Signale'] || [];
-    }
-  } catch (e) {
-    console.warn('Could not fetch Signale field list, falling back to halves:', e.message);
-  }
+  const categoryFields = window._categoryFields || {};
 
   function makeRequest(category, body, totalForCat, retriesLeft = 1) {
     const tracker = makeRequest._t;
@@ -1940,14 +1950,24 @@ async function startResearch() {
   makeRequest._t = {};
 
   const requests = CATEGORIES.flatMap(category => {
-    if (category === 'Signale' && signaleFields.length > 0) {
-      return signaleFields.map((_, fieldIndex) =>
-        makeRequest(category, { company, website, category, fieldIndex }, signaleFields.length)
+    const allFields = categoryFields[category] || [];
+    if (category === 'Signale' && allFields.length > 0) {
+      return allFields.map(field =>
+        makeRequest(category, { company, category, fields: [field] }, allFields.length)
       );
     }
-    return [0, 1].map(half =>
-      makeRequest(category, { company, website, category, half }, 2)
-    );
+    if (allFields.length === 0) {
+      return [makeRequest(category, { company, category, fields: [] }, 1)];
+    }
+    const mid = Math.ceil(allFields.length / 2);
+    const half1 = allFields.slice(mid);
+    if (half1.length === 0) {
+      return [makeRequest(category, { company, category, fields: allFields.slice(0, mid) }, 1)];
+    }
+    return [
+      makeRequest(category, { company, category, fields: allFields.slice(0, mid) }, 2),
+      makeRequest(category, { company, category, fields: half1 }, 2),
+    ];
   });
 
   await Promise.allSettled(requests);
@@ -2343,6 +2363,7 @@ document.getElementById('input-screen').style.display = 'flex';
     const p=loadProfile();
     if(!p){document.getElementById('profile-gate').style.display='flex';}
     else{renderProfileDisplay(p);document.getElementById('main-app').style.display='block';}
+    initCategoryFields();
   }
 })();
 async function checkPW(){
@@ -2358,6 +2379,7 @@ async function checkPW(){
     if(!res.ok){e.textContent='Server-Fehler. Bitte erneut versuchen.';return;}
     sessionStorage.setItem('vauth','1');
     sessionStorage.setItem('vauth_token',v);
+    initCategoryFields();
     document.getElementById('pw-gate').style.display='none';
     const profile = loadProfile();
     if (!profile) {
