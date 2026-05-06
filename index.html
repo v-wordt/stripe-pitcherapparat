@@ -178,6 +178,19 @@
     .generate-btn:hover { opacity: 0.9; transform: translateY(-1px); }
     .generate-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
+    .generate-btn-secondary {
+      display: flex; align-items: center; justify-content: center; gap: var(--sp-1);
+      padding: 16px 32px; font-family: 'Maven Pro', sans-serif;
+      font-weight: 700; font-size: 16px; border-radius: 10px; cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s, border-color 0.2s, color 0.2s;
+      flex: 1;
+      background: none;
+      border: 1.5px solid rgba(255,255,255,0.25);
+      color: rgba(255,255,255,0.8);
+    }
+    .generate-btn-secondary:hover { border-color: rgba(255,255,255,0.55); color: white; transform: translateY(-1px); }
+    .generate-btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+
     .seed-note {
       text-align: center;
       font-size: 13px;
@@ -1056,17 +1069,23 @@
     </div>
 
     <!-- Client fields -->
-    <div class="form-grid">
-      <div class="form-group">
-        <label>Namen des Unternehmens</label>
-        <input type="text" id="contact-company" placeholder="z.B. REWE Group" />
+    <div style="max-width:480px;margin:0 auto;">
+      <div class="form-group" style="margin-bottom:var(--sp-3);">
+        <label style="text-align:center;display:block;">Namen des Unternehmens</label>
+        <input type="text" id="contact-company" placeholder="z.B. REWE Group"
+          style="text-align:center;" onkeydown="if(event.key==='Enter')startQuickPitch()" />
+      </div>
+      <div style="display:flex;gap:12px;">
+        <button class="generate-btn" onclick="startQuickPitch()" style="flex:1;margin-top:0;max-width:none;">
+          <i class="ph ph-lightning" style="font-size:20px;"></i>
+          Quick Pitch
+        </button>
+        <button class="generate-btn-secondary" onclick="startResearch()">
+          <i class="ph ph-sparkle" style="font-size:20px;"></i>
+          Umfassender Pitch
+        </button>
       </div>
     </div>
-
-    <button class="generate-btn" onclick="startResearch()">
-      <i class="ph ph-sparkle" style="font-size:20px;"></i>
-      Pitch generieren
-    </button>
 
     <!-- Version history -->
     <div id="history-section" style="display:none;margin-top:var(--sp-3);">
@@ -1875,6 +1894,54 @@ function showMappingDraft() {
   document.getElementById('prospect-profile-screen').style.display = 'none';
   document.getElementById('mapping-draft-screen').style.display = 'flex';
   window.scrollTo(0, 0);
+}
+
+// ── QUICK PITCH ───────────────────────────────────────────────────────────
+async function startQuickPitch() {
+  const company = document.getElementById('contact-company').value.trim();
+  if (!company) { alert('Bitte gib den Unternehmensnamen ein.'); return; }
+
+  _lastInput = { company };
+  showLoading();
+  document.getElementById('loading-msg').textContent = 'Unternehmen wird recherchiert…';
+  document.getElementById('loading-sub').textContent = 'Quick Pitch wird generiert';
+  document.getElementById('research-progress').style.display = 'none';
+
+  const loadingMsgs = [
+    'Unternehmen wird recherchiert…',
+    'Stripe-Fit wird analysiert…',
+    'Pitch wird formuliert…',
+    'Fast fertig…'
+  ];
+  let msgIdx = 0;
+  const msgInterval = setInterval(() => {
+    msgIdx = (msgIdx + 1) % loadingMsgs.length;
+    document.getElementById('loading-msg').textContent = loadingMsgs[msgIdx];
+  }, 2500);
+
+  try {
+    const profile = loadProfile();
+    const res = await fetch(`${BACKEND_URL}/quick-generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-valantic-secret': sessionStorage.getItem('vauth_token') || ''
+      },
+      body: JSON.stringify({ company, contact: profile })
+    });
+    clearInterval(msgInterval);
+    if (res.status === 401) { handleAuthError(); return; }
+    if (!res.ok) throw new Error(`Backend ${res.status}: ${await res.text()}`);
+    const data = await res.json();
+    if (data.url) _lastPublishedUrl = data.url;
+    saveToHistory({ company, data: data.story });
+    renderOutput(data.story, { company });
+  } catch (err) {
+    clearInterval(msgInterval);
+    console.error('Quick pitch error:', err);
+    showInput();
+    alert('Error: ' + (err.message || JSON.stringify(err)));
+  }
 }
 
 // ── PROSPECT PROFILE STAGE ────────────────────────────────────────────────

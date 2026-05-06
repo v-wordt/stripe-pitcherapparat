@@ -1,6 +1,9 @@
 {
   "version": 2,
   "functions": {
+    "api/quick-generate.js": {
+      "maxDuration": 60
+    },
     "api/generate.js": {
       "maxDuration": 60
     },
