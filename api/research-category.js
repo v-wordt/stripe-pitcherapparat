@@ -2,7 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const SHARED_SECRET = process.env.SHARED_SECRET;
-const MODEL = 'claude-haiku-4-5-20251001';
+const MODEL = 'claude-sonnet-4-6';
 const MAX_TURNS = 5;
 const WEB_SEARCH_TOOL = { type: 'web_search_20250305', name: 'web_search', max_uses: 3 };
 
@@ -17,14 +17,15 @@ export default async function handler(req, res) {
   }
 
   const { company, category, fields } = req.body || {};
-  if (!company || !category || !Array.isArray(fields) || fields.length === 0) {
-    return res.status(400).json({ error: 'company, category, and fields[] required' });
+  if (!company || !category) {
+    return res.status(400).json({ error: 'company and category required' });
   }
+  const fieldList_arr = Array.isArray(fields) ? fields : [];
 
   try {
     const t0 = Date.now();
-    const fieldList = fields.map(f => `  - ${f}`).join('\n');
-    const fieldKeys = fields.map(f => `    "${f}": { ... }`).join(',\n');
+    const fieldList = fieldList_arr.map(f => `  - ${f}`).join('\n') || '  (research all standard fields for this category)';
+    const fieldKeys = fieldList_arr.map(f => `    "${f}": { ... }`).join(',\n') || `    "<field>": { ... }`;
 
     const systemPrompt = `You are a B2B prospect research analyst. Use web_search to find information about "${company}", then return ONLY a JSON object for the fields listed below. No prose, no markdown fences.
 

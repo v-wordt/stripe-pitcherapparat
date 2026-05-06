@@ -1180,26 +1180,18 @@ const CATEGORIES = [
 ];
 function catId(cat) { return cat.replace(/[^a-zA-Z0-9]/g, '_'); }
 
-const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1Okk8GvpMxNpAimn6Z1Dkt2lAzj3Qd8IM/export?format=csv&gid=886669856';
 window._categoryFields = {};
 
 async function initCategoryFields() {
   try {
-    const res = await fetch(SHEET_CSV_URL);
-    const text = await res.text();
-    const grouped = {};
-    const lines = text.trim().split('\n').map(l => l.split(','));
-    for (let i = 1; i < lines.length; i++) {
-      const [, info, typ] = lines[i];
-      if (!info || !info.trim()) continue;
-      const field = info.trim().replace(/^"(.+)"$/, '$1');
-      const category = typ ? typ.trim().replace(/^"(.+)"$/, '$1') : null;
-      if (!category) continue;
-      if (!grouped[category]) grouped[category] = [];
-      grouped[category].push(field);
-    }
-    window._categoryFields = grouped;
-    console.log('[init] category fields loaded:', Object.keys(grouped).map(k => `${k}(${grouped[k].length})`).join(', '));
+    const token = sessionStorage.getItem('vauth_token') || '';
+    const res = await fetch(`${BACKEND_URL}/research-fields`, {
+      headers: { 'x-valantic-secret': token }
+    });
+    if (!res.ok) { console.warn('[init] research-fields returned', res.status); return; }
+    const data = await res.json();
+    window._categoryFields = data.categories || {};
+    console.log('[init] category fields loaded:', Object.keys(window._categoryFields).map(k => `${k}(${window._categoryFields[k].length})`).join(', '));
   } catch (e) {
     console.warn('[init] could not load category fields:', e.message);
   }
