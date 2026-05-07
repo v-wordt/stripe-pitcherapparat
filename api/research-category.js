@@ -3,8 +3,19 @@ import Anthropic from '@anthropic-ai/sdk';
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const SHARED_SECRET = process.env.SHARED_SECRET;
 const MODEL = 'claude-haiku-4-5-20251001';
-const MAX_TURNS = 5;
-const WEB_SEARCH_TOOL = { type: 'web_search_20250305', name: 'web_search', max_uses: 1 };
+
+async function searchWithJina(query) {
+  try {
+    const res = await fetch(`https://s.jina.ai/${encodeURIComponent(query)}`, {
+      headers: { 'Accept': 'text/plain' },
+      signal: AbortSignal.timeout(20000)
+    });
+    if (!res.ok) return null;
+    return (await res.text()).slice(0, 6000);
+  } catch {
+    return null;
+  }
+}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -24,59 +35,55 @@ export default async function handler(req, res) {
 
   try {
     const t0 = Date.now();
+
+    const searchResults = await searchWithJina(`"${company}" ${category}`);
+
     const fieldList = fieldList_arr.map(f => `  - ${f}`).join('\n') || '  (research all standard fields for this category)';
     const fieldKeys = fieldList_arr.map(f => `    "${f}": { ... }`).join(',\n') || `    "<field>": { ... }`;
 
-    const systemPrompt = `You are a B2B prospect research analyst. Use web_search to find information about "${company}", then return ONLY a JSON object for the fields listed below. No prose, no markdown fences.
+    const systemPrompt = `You are a B2B prospect research analyst. Extract information from the search results provided and return ONLY a JSON object for the fields listed. No prose, no markdown fences.
 
 Decision ladder (apply per field):
-1. Direct evidence from a search result → confidence: "high", source: "web_search:<your query>". COMPACT shape.
+1. Direct evidence from search results → confidence: "high", source: "web_search". COMPACT shape.
 2. Reasoned estimate from related signals → assumption: true, assumptionNote ≤20 words, confidence: "medium"|"low", source: "estimate". FULL shape.
 3. Last resort only → value: "Nicht öffentlich verfügbar", confidence: "low", source: null. Must be rare.
 
 JSON rules: ASCII straight double quotes only. Escape literal " inside strings as \\". No trailing commas. No markdown.
 
 COMPACT shape (use when assumption is false):
-{ "value": "...", "source": "web_search:<query>|training_knowledge|null", "confidence": "high|medium|low" }
+{ "value": "...", "source": "web_search|training_knowledge|null", "confidence": "high|medium|low" }
 
 FULL shape (use only when assumption is true):
 { "value": "...", "assumption": true, "assumptionNote": "...", "source": "estimate", "confidence": "medium|low" }
 
-After your research, return exactly this structure and nothing else:
+Return exactly this structure and nothing else:
 {
   "${category}": {
 ${fieldKeys}
   }
 }`;
 
-    const messages = [{
-      role: 'user',
-      content: `Research the following fields for the company "${company}" (category: ${category}):\n\n${fieldList}\n\nSearch the web, then return the JSON.`
-    }];
+    const userMessage = `Company: "${company}", Category: "${category}"
 
-    let lastText = '';
+SEARCH RESULTS:
+${searchResults || '(no search results available — use training knowledge)'}
 
-    for (let turn = 0; turn < MAX_TURNS; turn++) {
-      const response = await client.messages.create({
-        model: MODEL,
-        max_tokens: 4096,
-        system: systemPrompt,
-        tools: [WEB_SEARCH_TOOL],
-        messages
-      });
+Extract these fields:
+${fieldList}
 
-      messages.push({ role: 'assistant', content: response.content });
+Return the JSON now.`;
 
-      const text = response.content.filter(b => b.type === 'text').map(b => b.text).join('');
-      if (text) lastText = text;
+    const response = await client.messages.create({
+      model: MODEL,
+      max_tokens: 2048,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userMessage }]
+    });
 
-      if (response.stop_reason === 'end_turn') break;
-      // pause_turn = web search in progress; continue loop (no user message needed)
-    }
+    const text = response.content.filter(b => b.type === 'text').map(b => b.text).join('');
+    console.log(`[research-category] ${category} took ${Date.now() - t0}ms`);
 
-    console.log(`[research-category] ${category} [${fields.join(', ')}] took ${Date.now() - t0}ms`);
-
-    const cleaned = lastText.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+    const cleaned = text.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
     const parsed = JSON.parse(cleaned);
     const result = parsed[category] ?? parsed;
 
