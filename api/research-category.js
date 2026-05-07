@@ -44,14 +44,17 @@ export default async function handler(req, res) {
     const systemPrompt = `You are a B2B prospect research analyst. Extract information from the search results provided and return ONLY a JSON object for the fields listed. No prose, no markdown fences.
 
 Decision ladder (apply per field):
-1. Direct evidence from search results → confidence: "high", source: "web_search". COMPACT shape.
-2. Reasoned estimate from related signals → assumption: true, assumptionNote ≤20 words, confidence: "medium"|"low", source: "estimate". FULL shape.
-3. Last resort only → value: "Nicht öffentlich verfügbar", confidence: "low", source: null. Must be rare.
+1. Direct evidence from search results → use the exact URL from the search result as "source" (e.g. "https://www.zalando.de/impressum"). confidence: "high". COMPACT shape.
+2. Reasoned estimate from signals in the search results → assumption: true, assumptionNote ≤20 words, confidence: "medium"|"low", source: "estimate". FULL shape.
+3. Training knowledge only (no supporting search result) → source: "training_knowledge", confidence: "medium"|"low". COMPACT shape.
+4. Last resort only → value: "Nicht öffentlich verfügbar", confidence: "low", source: null. Must be rare.
+
+SOURCE RULE: The search results contain URLs. Always prefer a real URL over "training_knowledge". Extract the URL of the page that gave you the evidence and use it as "source".
 
 JSON rules: ASCII straight double quotes only. Escape literal " inside strings as \\". No trailing commas. No markdown.
 
 COMPACT shape (use when assumption is false):
-{ "value": "...", "source": "web_search|training_knowledge|null", "confidence": "high|medium|low" }
+{ "value": "...", "source": "https://example.com/page|training_knowledge|null", "confidence": "high|medium|low" }
 
 FULL shape (use only when assumption is true):
 { "value": "...", "assumption": true, "assumptionNote": "...", "source": "estimate", "confidence": "medium|low" }
