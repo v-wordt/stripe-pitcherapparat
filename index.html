@@ -1146,6 +1146,9 @@
     </div>
   </div>
   <div style="padding: var(--sp-3) var(--sp-6); border-top: 1px solid rgba(255,255,255,0.08); display: flex; gap: var(--sp-2);">
+    <button id="profile-pdf-btn" onclick="downloadProfilePdf()" class="generate-btn-secondary" style="margin-top:0;padding:12px 20px;font-size:14px;" disabled>
+      <i class="ph ph-file-pdf" style="font-size:16px;"></i> Als PDF speichern
+    </button>
     <button class="research-button" onclick="proceedToMapping()" id="profile-next-btn" disabled style="flex: 1;">
       <i class="ph ph-arrow-right"></i> Zum Mapping Entwurf
     </button>
@@ -1203,22 +1206,16 @@ const CATEGORIES = [
 ];
 function catId(cat) { return cat.replace(/[^a-zA-Z0-9]/g, '_'); }
 
-window._categoryFields = {};
-
-async function initCategoryFields() {
-  try {
-    const token = sessionStorage.getItem('vauth_token') || '';
-    const res = await fetch(`${BACKEND_URL}/research-fields`, {
-      headers: { 'x-valantic-secret': token }
-    });
-    if (!res.ok) { console.warn('[init] research-fields returned', res.status); return; }
-    const data = await res.json();
-    window._categoryFields = data.categories || {};
-    console.log('[init] category fields loaded:', Object.keys(window._categoryFields).map(k => `${k}(${window._categoryFields[k].length})`).join(', '));
-  } catch (e) {
-    console.warn('[init] could not load category fields:', e.message);
-  }
-}
+window._categoryFields = {
+  "Grundinformationen": ["Firmenname (Rufname)", "Firmenname (offiziell, wie im Handelsregister etc.)", "Adresse Hauptsitz (Strasse, Nr., PLZ, Stadt, Ort, Bundesland/Kanton, Land)", "Webseite (als Link zur Landing Page, können mehrere Links sein)", "Gründungsjahr, Fusionsjahr, etc.", "Rechtsform (GmbH, AG, UG, etc.)"],
+  "Geschäftstätigkeit": ["Wirkungsraum (z.B. tätig in Norddeutschland und Dänemark)", "Kerngeschäft (z.B. Softwareentwicklung)", "Branche, stufenartig (z.B. Maschinenbau - Automotive - Sensoren)", "Marktanteil (in der Branche)", "Geschäftsmodell (aktuell: Lizenzen, SaaS, Hybrid, etc.)", "Zielmarkt/Kundensegmente (B2B, B2C, Enterprise, KMU, etc.)"],
+  "Grösse und Struktur": ["Anzahl Mitarbeiter (Total und nach Standort)", "Umsatz", "Transaktionsvolumen (geschätzt, täglich, wöchentlich, monatlich, jährlich)", "Gründer/Geschäftsführer", "Organisationsstruktur", "Eigentümerstruktur (Mehrheitseigentümer, Beteiligungen, Holding-Struktur)"],
+  "Produkte & Services": ["Hauptprodukte/Services (Beschreibung)", "Aktuelles Preismodell (Lizenzierung, Subscription, Hybrid)", "Kundenanzahl", "Durchschnittlicher Kundenwert (ACV) oder Kundentypen"],
+  "Finanzierung & Wachstum": ["Finanzierungsrunde(n) (Seed, Series A/B/C, etc.)", "Investoren", "M&A Aktivitäten (kürzlich abgeschlossen oder geplant)", "Wachstumstrend (stabil, wachsend, schrumpfend)", "Umsatzwachstum (YoY %)"],
+  "Markt & Wettbewerb": ["Hauptkonkurrenten", "Wettbewerbsvorteil/USP", "Marktsättigung in aktuellen Segmenten", "Strategische Ziele", "Business-Herausforderungen"],
+  "Technologie & Infrastructure": ["Tech Stack", "Aktuelle Zahlungsabwicklung/Payment Provider", "Geografische Datenzentren/Infrastruktur", "Technische Herausforderungen", "Technologische Ziele"],
+  "Signale": ["Aktuelle Pressemitteilungen/News (letzte 12 Monate)", "Stellenausschreibungen (Hinweis auf Wachstum oder neue Bereiche)", "Social Media Aktivität (LinkedIn, Twitter, etc.)", "Blog/Thought Leadership (Hinweis auf Innovationskultur)", "Partner oder Integrationen (bekannte Ökosysteme)", "Recent Pivots oder Produktankündigungen"]
+};
 
 // ── PROFILE (localStorage) ────────────────────────────────────────────────
 function loadProfile() {
@@ -2107,6 +2104,7 @@ function renderProspectProfile() {
   html += '</table>';
   area.innerHTML = html;
   document.getElementById('profile-next-btn').disabled = false;
+  document.getElementById('profile-pdf-btn').disabled = false;
   document.querySelector('#prospect-profile-screen .research-iterations').textContent = `${_profileIterations} / 5 Überarbeitungen`;
   renderProfileChat();
 }
@@ -2157,6 +2155,31 @@ async function sendProfileChat() {
   } finally {
     document.getElementById('profile-send-btn').disabled = _profileIterations >= 5;
     document.getElementById('profile-next-btn').disabled = false;
+  }
+}
+
+// ── PROFILE PDF ───────────────────────────────────────────────────────────
+async function downloadProfilePdf() {
+  const btn = document.getElementById('profile-pdf-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ph ph-spinner"></i> Wird erstellt…';
+  try {
+    const contact = loadProfile();
+    const company = _lastInput?.company || '';
+    const res = await fetch(`${BACKEND_URL}/profile-pdf`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-valantic-secret': sessionStorage.getItem('vauth_token') || '' },
+      body: JSON.stringify({ company, profile: _currentProfile, contact })
+    });
+    if (res.status === 401) { handleAuthError(); return; }
+    if (!res.ok) throw new Error(`Backend ${res.status}: ${await res.text()}`);
+    const { url } = await res.json();
+    window.open(url, '_blank');
+  } catch (err) {
+    alert('PDF konnte nicht erstellt werden: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ph ph-file-pdf" style="font-size:16px;"></i> Als PDF speichern';
   }
 }
 
@@ -2448,7 +2471,6 @@ document.getElementById('input-screen').style.display = 'flex';
     const p=loadProfile();
     if(!p){document.getElementById('profile-gate').style.display='flex';}
     else{renderProfileDisplay(p);document.getElementById('main-app').style.display='block';}
-    initCategoryFields();
   }
 })();
 async function checkPW(){
@@ -2464,7 +2486,6 @@ async function checkPW(){
     if(!res.ok){e.textContent='Server-Fehler. Bitte erneut versuchen.';return;}
     sessionStorage.setItem('vauth','1');
     sessionStorage.setItem('vauth_token',v);
-    initCategoryFields();
     document.getElementById('pw-gate').style.display='none';
     const profile = loadProfile();
     if (!profile) {

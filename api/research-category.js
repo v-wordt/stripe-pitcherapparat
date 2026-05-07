@@ -2,8 +2,8 @@ import Anthropic from '@anthropic-ai/sdk';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const SHARED_SECRET = process.env.SHARED_SECRET;
-const MODEL = 'claude-sonnet-4-6';
-const MAX_TURNS = 5;
+const MODEL = 'claude-haiku-4-5-20251001';
+const MAX_TURNS = 3;
 const WEB_SEARCH_TOOL = { type: 'web_search_20250305', name: 'web_search', max_uses: 3 };
 
 export default async function handler(req, res) {

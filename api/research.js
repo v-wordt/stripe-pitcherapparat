@@ -3,34 +3,56 @@ import Anthropic from '@anthropic-ai/sdk';
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const SHARED_SECRET = process.env.SHARED_SECRET;
 
-const GOOGLE_SHEET_ID = '1Okk8GvpMxNpAimn6Z1Dkt2lAzj3Qd8IM';
-const GOOGLE_PROSPECT_PROFILE_GID = '886669856';
-
 const MODEL_RESEARCH = 'claude-sonnet-4-6';
 const MODEL_REFINE = 'claude-haiku-4-5-20251001';
 const LOOP_BUDGET = 2;
 const FETCH_CHAR_CAP = 8000;
 
-async function fetchProfileFields() {
-  const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/export?format=csv&gid=${GOOGLE_PROSPECT_PROFILE_GID}`;
-  const res = await fetch(url);
-  const text = await res.text();
-
-  const lines = text.trim().split('\n').map(l => l.split(','));
-  const fields = [];
-
-  for (let i = 1; i < lines.length; i++) {
-    const [, info, typ] = lines[i];
-    if (info && info.trim()) {
-      fields.push({
-        field: info.trim().replace(/^"(.+)"$/, '$1'),
-        category: typ ? typ.trim().replace(/^"(.+)"$/, '$1') : null
-      });
-    }
-  }
-
-  return fields;
-}
+const PROSPECT_FIELDS = [
+  { field: 'Firmenname (Rufname)', category: 'Grundinformationen' },
+  { field: 'Firmenname (offiziell, wie im Handelsregister etc.)', category: 'Grundinformationen' },
+  { field: 'Adresse Hauptsitz (Strasse, Nr., PLZ, Stadt, Ort, Bundesland/Kanton, Land)', category: 'Grundinformationen' },
+  { field: 'Webseite (als Link zur Landing Page, können mehrere Links sein)', category: 'Grundinformationen' },
+  { field: 'Gründungsjahr, Fusionsjahr, etc.', category: 'Grundinformationen' },
+  { field: 'Rechtsform (GmbH, AG, UG, etc.)', category: 'Grundinformationen' },
+  { field: 'Wirkungsraum (z.B. tätig in Norddeutschland und Dänemark)', category: 'Geschäftstätigkeit' },
+  { field: 'Kerngeschäft (z.B. Softwareentwicklung)', category: 'Geschäftstätigkeit' },
+  { field: 'Branche, stufenartig (z.B. Maschinenbau - Automotive - Sensoren)', category: 'Geschäftstätigkeit' },
+  { field: 'Marktanteil (in der Branche)', category: 'Geschäftstätigkeit' },
+  { field: 'Geschäftsmodell (aktuell: Lizenzen, SaaS, Hybrid, etc.)', category: 'Geschäftstätigkeit' },
+  { field: 'Zielmarkt/Kundensegmente (B2B, B2C, Enterprise, KMU, etc.)', category: 'Geschäftstätigkeit' },
+  { field: 'Anzahl Mitarbeiter (Total und nach Standort)', category: 'Grösse und Struktur' },
+  { field: 'Umsatz', category: 'Grösse und Struktur' },
+  { field: 'Transaktionsvolumen (geschätzt, täglich, wöchentlich, monatlich, jährlich)', category: 'Grösse und Struktur' },
+  { field: 'Gründer/Geschäftsführer', category: 'Grösse und Struktur' },
+  { field: 'Organisationsstruktur', category: 'Grösse und Struktur' },
+  { field: 'Eigentümerstruktur (Mehrheitseigentümer, Beteiligungen, Holding-Struktur)', category: 'Grösse und Struktur' },
+  { field: 'Hauptprodukte/Services (Beschreibung)', category: 'Produkte & Services' },
+  { field: 'Aktuelles Preismodell (Lizenzierung, Subscription, Hybrid)', category: 'Produkte & Services' },
+  { field: 'Kundenanzahl', category: 'Produkte & Services' },
+  { field: 'Durchschnittlicher Kundenwert (ACV) oder Kundentypen', category: 'Produkte & Services' },
+  { field: 'Finanzierungsrunde(n) (Seed, Series A/B/C, etc.)', category: 'Finanzierung & Wachstum' },
+  { field: 'Investoren', category: 'Finanzierung & Wachstum' },
+  { field: 'M&A Aktivitäten (kürzlich abgeschlossen oder geplant)', category: 'Finanzierung & Wachstum' },
+  { field: 'Wachstumstrend (stabil, wachsend, schrumpfend)', category: 'Finanzierung & Wachstum' },
+  { field: 'Umsatzwachstum (YoY %)', category: 'Finanzierung & Wachstum' },
+  { field: 'Hauptkonkurrenten', category: 'Markt & Wettbewerb' },
+  { field: 'Wettbewerbsvorteil/USP', category: 'Markt & Wettbewerb' },
+  { field: 'Marktsättigung in aktuellen Segmenten', category: 'Markt & Wettbewerb' },
+  { field: 'Strategische Ziele', category: 'Markt & Wettbewerb' },
+  { field: 'Business-Herausforderungen', category: 'Markt & Wettbewerb' },
+  { field: 'Tech Stack', category: 'Technologie & Infrastructure' },
+  { field: 'Aktuelle Zahlungsabwicklung/Payment Provider', category: 'Technologie & Infrastructure' },
+  { field: 'Geografische Datenzentren/Infrastruktur', category: 'Technologie & Infrastructure' },
+  { field: 'Technische Herausforderungen', category: 'Technologie & Infrastructure' },
+  { field: 'Technologische Ziele', category: 'Technologie & Infrastructure' },
+  { field: 'Aktuelle Pressemitteilungen/News (letzte 12 Monate)', category: 'Signale' },
+  { field: 'Stellenausschreibungen (Hinweis auf Wachstum oder neue Bereiche)', category: 'Signale' },
+  { field: 'Social Media Aktivität (LinkedIn, Twitter, etc.)', category: 'Signale' },
+  { field: 'Blog/Thought Leadership (Hinweis auf Innovationskultur)', category: 'Signale' },
+  { field: 'Partner oder Integrationen (bekannte Ökosysteme)', category: 'Signale' },
+  { field: 'Recent Pivots oder Produktankündigungen', category: 'Signale' },
+];
 
 // Jina Reader: renders JavaScript, returns clean readable text from any URL
 async function fetchWithJina(url) {
@@ -426,8 +448,7 @@ export default async function handler(req, res) {
 
     const subpages = deriveSubpages(website);
     const tSeed = Date.now();
-    const [fields, websiteContent, impressumContent, aboutContent, searchDe, searchEn] = await Promise.all([
-      fetchProfileFields(),
+    const [websiteContent, impressumContent, aboutContent, searchDe, searchEn] = await Promise.all([
       fetchWithJina(website),
       subpages.impressum ? fetchWithJina(subpages.impressum) : null,
       subpages.about ? fetchWithJina(subpages.about) : null,
@@ -441,11 +462,11 @@ export default async function handler(req, res) {
     let researchedProfile;
     const tLoop = Date.now();
     try {
-      researchedProfile = await runAgenticResearch(company, website, fields, seedInputs);
+      researchedProfile = await runAgenticResearch(company, website, PROSPECT_FIELDS, seedInputs);
       console.log(`[research] agentic loop+synth total ${Date.now() - tLoop}ms`);
     } catch (err) {
       console.error('Agentic research failed, falling back to single pass:', err);
-      researchedProfile = await fallbackSinglePass(company, website, fields, seedInputs);
+      researchedProfile = await fallbackSinglePass(company, website, PROSPECT_FIELDS, seedInputs);
       console.log(`[research] fallback single pass total ${Date.now() - tLoop}ms`);
     }
 

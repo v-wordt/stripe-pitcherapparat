@@ -13,8 +13,8 @@
     "api/research-category.js": {
       "maxDuration": 60
     },
-    "api/research-fields.js": {
-      "maxDuration": 10
+    "api/profile-pdf.js": {
+      "maxDuration": 60
     },
     "api/mapping.js": {
       "maxDuration": 60
