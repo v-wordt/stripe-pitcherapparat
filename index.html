@@ -2291,6 +2291,15 @@ async function startResearch() {
   const assembled = {};
   activeCategories.forEach(cat => { assembled[cat] = {}; });
   let authFailed = false;
+  let lastBackendError = null;
+
+  async function readError(res) {
+    try {
+      const body = await res.json();
+      if (body && body.error) return `${res.status}: ${body.error}`;
+    } catch {}
+    return `Backend ${res.status}`;
+  }
 
   // Phase 1: resolve official domain + authoritative identity anchors.
   let seedWebsite = null;
@@ -2307,9 +2316,11 @@ async function startResearch() {
       seedWebsite = seed.website || null;
       seedAnchor = seed.anchor || {};
     } else {
-      console.error(`[research] seed failed: Backend ${seedRes.status}`);
+      lastBackendError = await readError(seedRes);
+      console.error(`[research] seed failed: ${lastBackendError}`);
     }
   } catch (err) {
+    lastBackendError = err.message;
     console.error('[research] seed failed:', err.message);
   }
 
@@ -2354,7 +2365,7 @@ async function startResearch() {
       })
     });
     if (res.status === 401) { authFailed = true; throw new Error('Unauthorized'); }
-    if (!res.ok) throw new Error(`Backend ${res.status}`);
+    if (!res.ok) throw new Error(await readError(res));
     return res.json();
   }
 
@@ -2381,6 +2392,7 @@ async function startResearch() {
           const data = await fetchCategory(category, batch, strat);
           Object.assign(assembled[category], data.result || {});
         } catch (err) {
+          lastBackendError = err.message;
           console.warn(`[research] ${category} batch failed (round ${round}):`, err.message);
         }
       }));
@@ -2415,10 +2427,10 @@ async function startResearch() {
 
   if (authFailed) { handleAuthError(); return; }
 
-  const hasData = CATEGORIES.some(cat => Object.keys(assembled[cat] || {}).length > 0);
+  const hasData = activeCategories.some(cat => Object.keys(assembled[cat] || {}).length > 0);
   if (!hasData) {
     showInput();
-    alert('Alle Recherche-Anfragen sind fehlgeschlagen. Bitte erneut versuchen.');
+    alert('Alle Recherche-Anfragen sind fehlgeschlagen.\n\nFehler: ' + (lastBackendError || 'unbekannt') + '\n\nBitte erneut versuchen.');
     return;
   }
 

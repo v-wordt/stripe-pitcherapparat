@@ -13,12 +13,37 @@ export function isInvalidToolError(err) {
          /400|invalid_request_error/i.test(msg);
 }
 
+// Extract the first balanced {...} object, ignoring braces inside strings.
+// Models (esp. Haiku) often wrap the JSON in prose and ```json fences.
+function extractJsonObject(s) {
+  const start = s.indexOf('{');
+  if (start < 0) return null;
+  let depth = 0, inStr = false, esc = false;
+  for (let i = start; i < s.length; i++) {
+    const c = s[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (c === '\\') esc = true;
+      else if (c === '"') inStr = false;
+    } else if (c === '"') inStr = true;
+    else if (c === '{') depth++;
+    else if (c === '}' && --depth === 0) return s.slice(start, i + 1);
+  }
+  return null;
+}
+
 export function parseStrictJson(response) {
   const text = response.content.map(b => b.text || '').join('');
   const cleaned = text.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
   try {
     return JSON.parse(cleaned);
-  } catch (err) {
+  } catch (firstErr) {
+    const candidate = extractJsonObject(text);
+    if (candidate) {
+      try {
+        return JSON.parse(candidate);
+      } catch {}
+    }
     const stopReason = response.stop_reason || 'unknown';
     const len = cleaned.length;
     const tail = cleaned.slice(Math.max(0, len - 300));
@@ -26,7 +51,7 @@ export function parseStrictJson(response) {
     if (stopReason === 'max_tokens') {
       throw new Error(`Output hit max_tokens cap (${len} chars). Raise max_tokens or constrain the schema.`);
     }
-    throw new Error(`Model returned invalid JSON (stop_reason=${stopReason}, ${len} chars). Likely an unescaped quote or stray character. Original parse error: ${err.message}`);
+    throw new Error(`Model returned invalid JSON (stop_reason=${stopReason}, ${len} chars). Likely an unescaped quote or stray character. Original parse error: ${firstErr.message}`);
   }
 }
 
@@ -70,8 +95,6 @@ export async function runGroundedJson({
       response = await client.messages.create({
         model,
         max_tokens: maxTokens,
-        thinking: { type: 'disabled' },
-        output_config: { effort: 'low' },
         system,
         tools: useWebSearch ? [searchTool] : [],
         messages
