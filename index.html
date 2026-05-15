@@ -191,6 +191,94 @@
     .generate-btn-secondary:hover { background: var(--val-gradient); color: white; border-color: transparent; transform: translateY(-1px); }
     .generate-btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
 
+    /* ── Field selector chips ───────────────────────────────────────────── */
+    .field-selector { display:flex; gap:8px; justify-content:center; margin-top:20px; flex-wrap:wrap; }
+    .field-chip {
+      display:inline-flex; align-items:center; gap:6px;
+      padding:7px 14px; border-radius:20px;
+      border:1px solid rgba(255,255,255,0.12);
+      background:none; color:rgba(255,255,255,0.35);
+      font-family:'Maven Pro',sans-serif; font-size:11px; font-weight:600;
+      letter-spacing:.06em; text-transform:uppercase;
+      cursor:pointer; transition:border-color 0.18s, color 0.18s, background 0.18s;
+      user-select:none;
+    }
+    .field-chip:hover { border-color:rgba(255,255,255,0.35); color:rgba(255,255,255,0.7); }
+    .field-chip.active { border-color:rgba(255,255,255,0.45); color:rgba(255,255,255,0.85); background:rgba(255,255,255,0.05); }
+    .field-chip i { font-size:12px; }
+
+    /* ── Fields modal ───────────────────────────────────────────────────── */
+    .fields-modal-overlay {
+      display:none; position:fixed; inset:0; z-index:500;
+      background:rgba(0,0,0,0.8); overflow-y:auto; padding:40px 16px;
+    }
+    .fields-modal-box {
+      max-width:680px; margin:0 auto;
+      background:#0d0b20; border-radius:16px;
+      border:1px solid rgba(255,255,255,0.1);
+      overflow:hidden; display:flex; flex-direction:column;
+    }
+    .fm-body { padding:24px 28px; overflow-y:auto; }
+    .fm-category { margin-bottom:28px; }
+    .fm-cat-title {
+      font-size:10px; font-weight:700; letter-spacing:.14em;
+      text-transform:uppercase; color:rgba(255,255,255,0.3);
+      padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.07);
+      margin-bottom:10px;
+    }
+    .fm-field-row {
+      display:flex; align-items:center; gap:6px;
+      padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.04);
+    }
+    .fm-field-text { flex:1; font-size:13px; color:rgba(255,255,255,0.65); }
+    .fm-field-added { color:rgba(255,255,255,0.85); }
+    .fm-field-input {
+      flex:1; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.22);
+      border-radius:6px; padding:4px 8px; color:white; font-size:13px;
+      font-family:'Maven Pro',sans-serif; outline:none;
+    }
+    .fm-icon-btn {
+      background:none; border:none; cursor:pointer; padding:4px;
+      color:rgba(255,255,255,0.22); font-size:13px; line-height:1; transition:color 0.15s;
+    }
+    .fm-icon-btn:hover { color:rgba(255,255,255,0.75); }
+    .fm-add-row { display:flex; gap:8px; margin-top:10px; }
+    .fm-add-input {
+      flex:1; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
+      border-radius:8px; padding:7px 12px; color:white; font-size:13px;
+      font-family:'Maven Pro',sans-serif; outline:none; transition:border-color 0.15s;
+    }
+    .fm-add-input:focus { border-color:rgba(255,255,255,0.28); }
+    .fm-add-btn {
+      background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14);
+      border-radius:8px; padding:7px 14px; color:rgba(255,255,255,0.65);
+      font-size:13px; font-family:'Maven Pro',sans-serif; cursor:pointer; transition:all 0.15s;
+    }
+    .fm-add-btn:hover { background:rgba(255,255,255,0.11); color:white; }
+    .fm-footer {
+      padding:14px 24px; border-top:1px solid rgba(255,255,255,0.07);
+      display:flex; justify-content:space-between; align-items:center;
+      position:sticky; bottom:0; background:#0d0b20;
+    }
+    .fm-reset-btn {
+      background:none; border:none; cursor:pointer; font-family:'Maven Pro',sans-serif;
+      font-size:12px; color:rgba(255,255,255,0.3); padding:6px 0; transition:color 0.15s;
+    }
+    .fm-reset-btn:hover { color:rgba(255,255,255,0.7); }
+    .fm-cancel-btn {
+      background:none; border:1px solid rgba(255,255,255,0.14); border-radius:8px;
+      padding:8px 16px; color:rgba(255,255,255,0.5); font-family:'Maven Pro',sans-serif;
+      font-size:13px; cursor:pointer; transition:all 0.15s;
+    }
+    .fm-cancel-btn:hover { border-color:rgba(255,255,255,0.35); color:rgba(255,255,255,0.85); }
+    .fm-save-btn {
+      background:var(--val-gradient); border:none; border-radius:8px;
+      padding:8px 20px; color:white; font-family:'Maven Pro',sans-serif;
+      font-size:13px; font-weight:700; cursor:pointer; transition:opacity 0.15s;
+    }
+    .fm-save-btn:hover { opacity:0.88; }
+    .fm-save-btn:disabled { opacity:0.5; cursor:not-allowed; }
+
     .seed-note {
       text-align: center;
       font-size: 13px;
@@ -1098,6 +1186,8 @@
       </div>
     </div>
 
+    <div id="field-selector-section"></div>
+
     <p class="seed-note">Stripe × valantic · Powered by Claude</p>
   </div>
 
@@ -1217,6 +1307,205 @@ window._categoryFields = {
   "Technologie & Infrastructure": ["Tech Stack", "Aktuelle Zahlungsabwicklung/Payment Provider", "Geografische Datenzentren/Infrastruktur", "Technische Herausforderungen", "Technologische Ziele"],
   "Signale": ["Aktuelle Pressemitteilungen/News (letzte 12 Monate)", "Stellenausschreibungen (Hinweis auf Wachstum oder neue Bereiche)", "Social Media Aktivität (LinkedIn, Twitter, etc.)", "Blog/Thought Leadership (Hinweis auf Innovationskultur)", "Partner oder Integrationen (bekannte Ökosysteme)", "Recent Pivots oder Produktankündigungen"]
 };
+
+// ── CUSTOM FIELDS ─────────────────────────────────────────────────────────
+let _customFields = null;
+let _useCustomFields = false;
+let _modalFields = null;
+let _modalReadOnly = false;
+let _editingField = null; // { catIdx, fieldIdx }
+
+async function loadCustomFields() {
+  try {
+    const res = await fetch(`${BACKEND_URL}/custom-fields`);
+    if (!res.ok) return;
+    const data = await res.json();
+    _customFields = data.categories || null;
+    _useCustomFields = _customFields !== null;
+  } catch {}
+  renderFieldSelector();
+}
+
+function renderFieldSelector() {
+  const el = document.getElementById('field-selector-section');
+  if (!el) return;
+  if (!_customFields) {
+    el.innerHTML = `<div class="field-selector">
+      <button class="field-chip" onclick="openFieldsModal(false)" title="Suchfelder anzeigen und bearbeiten">
+        <i class="ph ph-pencil-simple"></i>Standard-Suchfelder Unternehmensprofil
+      </button>
+    </div>`;
+  } else {
+    el.innerHTML = `<div class="field-selector">
+      <div class="field-chip${!_useCustomFields ? ' active' : ''}" onclick="selectFieldList(false)" role="button" tabindex="0">
+        Standard-Suchfelder Unternehmensprofil
+        <button class="fm-icon-btn" style="margin-left:2px;" onclick="event.stopPropagation();openFieldsModal(true)" title="Anzeigen"><i class="ph ph-eye"></i></button>
+      </div>
+      <div class="field-chip${_useCustomFields ? ' active' : ''}" onclick="selectFieldList(true)" role="button" tabindex="0">
+        <button class="fm-icon-btn" style="margin-right:2px;" onclick="event.stopPropagation();openFieldsModal(false)" title="Bearbeiten"><i class="ph ph-pencil-simple"></i></button>
+        Angepasste Suchfelder Unternehmensprofil
+      </div>
+    </div>`;
+  }
+}
+
+function selectFieldList(useCustom) {
+  _useCustomFields = useCustom;
+  renderFieldSelector();
+}
+
+function openFieldsModal(readOnly) {
+  _modalReadOnly = readOnly;
+  _editingField = null;
+  _modalFields = readOnly
+    ? JSON.parse(JSON.stringify(window._categoryFields))
+    : (_customFields ? JSON.parse(JSON.stringify(_customFields)) : JSON.parse(JSON.stringify(window._categoryFields)));
+  document.getElementById('fields-modal-title').textContent = readOnly ? 'Standard-Suchfelder' : 'Suchfelder bearbeiten';
+  const footer = document.getElementById('fields-modal-footer');
+  if (readOnly) {
+    footer.innerHTML = `<div></div>
+      <button class="fm-cancel-btn" onclick="closeFieldsModal()">Schließen</button>`;
+  } else {
+    footer.innerHTML = `
+      <button class="fm-reset-btn" onclick="resetModalToDefault()">Auf Standard zurücksetzen</button>
+      <div style="display:flex;gap:8px;">
+        <button class="fm-cancel-btn" onclick="closeFieldsModal()">Abbrechen</button>
+        <button class="fm-save-btn" id="fields-save-btn" onclick="saveCustomFields()">Speichern</button>
+      </div>`;
+  }
+  renderModalBody();
+  document.getElementById('fields-modal').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeFieldsModal() {
+  document.getElementById('fields-modal').style.display = 'none';
+  document.body.style.overflow = '';
+  _modalFields = null;
+  _editingField = null;
+}
+
+function renderModalBody() {
+  const body = document.getElementById('fields-modal-body');
+  if (!body || !_modalFields) return;
+  const allCats = Object.keys(window._categoryFields);
+  const defaultCatFields = window._categoryFields;
+  body.innerHTML = allCats.map((cat, catIdx) => {
+    const fields = _modalFields[cat] || [];
+    const defaultSet = new Set(defaultCatFields[cat] || []);
+    const rows = fields.map((f, fi) => {
+      const isAdded = !defaultSet.has(f);
+      const isEditing = _editingField && _editingField.catIdx === catIdx && _editingField.fieldIdx === fi;
+      if (_modalReadOnly) {
+        return `<div class="fm-field-row">
+          <span class="fm-field-text${isAdded ? ' fm-field-added' : ''}">${escapeHtml(f)}</span>
+        </div>`;
+      }
+      if (isEditing) {
+        return `<div class="fm-field-row">
+          <input id="fm-edit-input" class="fm-field-input" value="${escapeHtml(f)}"
+            onkeydown="if(event.key==='Enter')confirmEditField();else if(event.key==='Escape')cancelEditField()" />
+          <button class="fm-icon-btn" onclick="confirmEditField()" title="Bestätigen"><i class="ph ph-check"></i></button>
+          <button class="fm-icon-btn" onclick="cancelEditField()" title="Abbrechen"><i class="ph ph-x"></i></button>
+        </div>`;
+      }
+      return `<div class="fm-field-row">
+        <span class="fm-field-text${isAdded ? ' fm-field-added' : ''}">${escapeHtml(f)}</span>
+        <button class="fm-icon-btn" onclick="editModalField(${catIdx},${fi})" title="Bearbeiten"><i class="ph ph-pencil-simple"></i></button>
+        <button class="fm-icon-btn" onclick="deleteModalField(${catIdx},${fi})" title="Entfernen"><i class="ph ph-trash"></i></button>
+      </div>`;
+    }).join('');
+    const addRow = _modalReadOnly ? '' : `<div class="fm-add-row">
+      <input class="fm-add-input" id="fm-add-${catIdx}" placeholder="Neues Feld hinzufügen…"
+        onkeydown="if(event.key==='Enter')addModalField(${catIdx})" />
+      <button class="fm-add-btn" onclick="addModalField(${catIdx})"><i class="ph ph-plus"></i> Hinzufügen</button>
+    </div>`;
+    const emptyNote = fields.length === 0 ? `<div style="font-size:12px;color:rgba(255,255,255,0.2);padding:6px 0;">Keine Felder</div>` : '';
+    return `<div class="fm-category">
+      <div class="fm-cat-title">${escapeHtml(cat)}</div>
+      ${emptyNote}${rows}${addRow}
+    </div>`;
+  }).join('');
+  // Focus edit input if in editing state
+  if (_editingField) {
+    requestAnimationFrame(() => {
+      const inp = document.getElementById('fm-edit-input');
+      if (inp) { inp.focus(); inp.select(); }
+    });
+  }
+}
+
+function editModalField(catIdx, fieldIdx) {
+  _editingField = { catIdx, fieldIdx };
+  renderModalBody();
+}
+
+function confirmEditField() {
+  if (!_editingField) return;
+  const inp = document.getElementById('fm-edit-input');
+  if (!inp) return;
+  const val = inp.value.trim();
+  if (val) {
+    const cat = Object.keys(window._categoryFields)[_editingField.catIdx];
+    _modalFields[cat][_editingField.fieldIdx] = val;
+  }
+  _editingField = null;
+  renderModalBody();
+}
+
+function cancelEditField() {
+  _editingField = null;
+  renderModalBody();
+}
+
+function deleteModalField(catIdx, fieldIdx) {
+  const cat = Object.keys(window._categoryFields)[catIdx];
+  _modalFields[cat].splice(fieldIdx, 1);
+  _editingField = null;
+  renderModalBody();
+}
+
+function addModalField(catIdx) {
+  const cat = Object.keys(window._categoryFields)[catIdx];
+  const inp = document.getElementById(`fm-add-${catIdx}`);
+  if (!inp) return;
+  const val = inp.value.trim();
+  if (!val) return;
+  if (!_modalFields[cat]) _modalFields[cat] = [];
+  _modalFields[cat].push(val);
+  _editingField = null;
+  renderModalBody();
+  requestAnimationFrame(() => {
+    const newInp = document.getElementById(`fm-add-${catIdx}`);
+    if (newInp) newInp.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+}
+
+function resetModalToDefault() {
+  _modalFields = JSON.parse(JSON.stringify(window._categoryFields));
+  _editingField = null;
+  renderModalBody();
+}
+
+async function saveCustomFields() {
+  const btn = document.getElementById('fields-save-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Speichert…'; }
+  try {
+    const res = await fetch(`${BACKEND_URL}/custom-fields`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-valantic-secret': sessionStorage.getItem('vauth_token') || '' },
+      body: JSON.stringify({ categories: _modalFields })
+    });
+    if (!res.ok) throw new Error(`Backend ${res.status}`);
+    _customFields = JSON.parse(JSON.stringify(_modalFields));
+    _useCustomFields = true;
+    renderFieldSelector();
+    closeFieldsModal();
+  } catch (err) {
+    console.error('[custom-fields] save failed:', err);
+    if (btn) { btn.disabled = false; btn.textContent = 'Fehler – nochmal?'; }
+  }
+}
 
 // ── PROFILE (localStorage) ────────────────────────────────────────────────
 function loadProfile() {
@@ -1940,8 +2229,11 @@ async function startResearch() {
   document.getElementById('loading-msg').textContent = 'Prospect wird recherchiert…';
   document.getElementById('loading-sub').textContent = 'Kategorien werden nacheinander recherchiert';
 
+  const categoryFields = (_useCustomFields && _customFields) ? _customFields : (window._categoryFields || {});
+  const activeCategories = Object.keys(categoryFields).filter(c => (categoryFields[c] || []).length > 0);
+
   const progressEl = document.getElementById('research-progress');
-  progressEl.innerHTML = CATEGORIES.map(cat =>
+  progressEl.innerHTML = activeCategories.map(cat =>
     `<span class="cat-chip" id="cat-chip-${catId(cat)}">${cat}</span>`
   ).join('');
   progressEl.style.display = 'flex';
@@ -1952,10 +2244,8 @@ async function startResearch() {
   };
 
   const assembled = {};
-  CATEGORIES.forEach(cat => { assembled[cat] = {}; });
+  activeCategories.forEach(cat => { assembled[cat] = {}; });
   let authFailed = false;
-
-  const categoryFields = window._categoryFields || {};
 
   async function fetchCategory(category) {
     const allFields = categoryFields[category] || [];
@@ -1969,7 +2259,7 @@ async function startResearch() {
     return res.json();
   }
 
-  for (const category of CATEGORIES) {
+  for (const category of activeCategories) {
     const chipEl = document.getElementById(`cat-chip-${catId(category)}`);
     if (chipEl) chipEl.className = 'cat-chip loading';
     try {
@@ -2286,6 +2576,7 @@ function renderSource(source) {
 
 document.getElementById('input-screen').style.display = 'flex';
 (function init() {
+  loadCustomFields();
   // Load stats counter
   if (BACKEND_URL) {
     fetch(`${BACKEND_URL}/stats`)
@@ -2310,6 +2601,20 @@ document.getElementById('input-screen').style.display = 'flex';
 <!-- ══════════════════════════════════════════
      EDIT PANEL (persistent, outside output-screen)
 ══════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════
+     FIELDS MODAL
+══════════════════════════════════════════ -->
+<div class="fields-modal-overlay" id="fields-modal" onclick="if(event.target===this)closeFieldsModal()">
+  <div class="fields-modal-box">
+    <div class="ep-header">
+      <span class="ep-title" id="fields-modal-title">Suchfelder</span>
+      <button class="ep-close" onclick="closeFieldsModal()">×</button>
+    </div>
+    <div class="fm-body" id="fields-modal-body"></div>
+    <div class="fm-footer" id="fields-modal-footer"></div>
+  </div>
+</div>
+
 <div class="edit-backdrop" id="edit-backdrop" onclick="closeEditPanel()"></div>
 <div class="edit-panel" id="edit-panel">
   <div class="ep-header">
