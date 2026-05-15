@@ -1098,14 +1098,6 @@
       </div>
     </div>
 
-    <!-- Version history -->
-    <div id="history-section" style="display:none;margin-top:var(--sp-3);">
-      <div style="display:flex;justify-content:flex-end;align-items:center;margin-bottom:10px;">
-        <button onclick="clearHistory()" title="Verlauf löschen" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.25);padding:2px 4px;line-height:1;" onmouseover="this.style.color='rgba(255,255,255,0.6)'" onmouseout="this.style.color='rgba(255,255,255,0.25)'"><i class="ph ph-trash" style="font-size:14px;"></i></button>
-      </div>
-      <div id="history-list" style="display:flex;flex-direction:column;gap:6px;"></div>
-    </div>
-
     <p class="seed-note">Stripe × valantic · Powered by Claude</p>
   </div>
 
@@ -1277,49 +1269,6 @@ function saveProfileGate() {
   document.getElementById('main-app').style.display = 'block';
 }
 
-// ── HISTORY (localStorage, last 5) ───────────────────────────────────────
-function clearHistory() {
-  localStorage.removeItem('valantic_history');
-  renderHistory();
-}
-
-function saveToHistory(entry) {
-  try {
-    const h = JSON.parse(localStorage.getItem('valantic_history') || '[]');
-    h.unshift({ ...entry, saved: new Date().toISOString() });
-    localStorage.setItem('valantic_history', JSON.stringify(h.slice(0, 5)));
-    renderHistory();
-  } catch {}
-}
-
-function renderHistory() {
-  try {
-    const h = JSON.parse(localStorage.getItem('valantic_history') || '[]');
-    const section = document.getElementById('history-section');
-    const list = document.getElementById('history-list');
-    if (!h.length) { section.style.display = 'none'; return; }
-    section.style.display = 'block';
-    list.innerHTML = h.map((item, i) => `
-      <button onclick="loadFromHistory(${i})" style="font-family:'Maven Pro',sans-serif;width:100%;text-align:left;padding:8px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;cursor:pointer;color:rgba(255,255,255,0.7);font-size:13px;display:flex;justify-content:space-between;align-items:center;">
-        <span><strong>${item.company}</strong></span>
-        <span style="color:rgba(255,255,255,0.3);font-size:11px;">${new Date(item.saved).toLocaleDateString()}</span>
-      </button>`).join('');
-  } catch {}
-}
-
-function loadFromHistory(i) {
-  try {
-    const h = JSON.parse(localStorage.getItem('valantic_history') || '[]');
-    const item = h[i];
-    if (!item) return;
-    document.getElementById('contact-company').value = item.company || '';
-    document.getElementById('contact-website').value = item.website || '';
-    if (item.data) {
-      renderOutput(item.data, { company: item.company, website: item.website });
-    }
-  } catch {}
-}
-
 // ── GENERATE ──────────────────────────────────────────────────────────────
 async function generatePitch() {
   const company = document.getElementById('contact-company').value.trim();
@@ -1389,8 +1338,6 @@ async function generatePitch() {
       result = JSON.parse(clean);
     }
 
-    // Save to history
-    saveToHistory({ company, website, data: result });
     renderOutput(result, { company, website });
 
   } catch (err) {
@@ -1966,7 +1913,6 @@ async function startQuickPitch() {
     if (!res.ok) throw new Error(`Backend ${res.status}: ${await res.text()}`);
     const data = await res.json();
     if (data.url) _lastPublishedUrl = data.url;
-    saveToHistory({ company, data: data.story });
     renderOutput(data.story, { company });
   } catch (err) {
     clearInterval(msgInterval);
@@ -2308,7 +2254,6 @@ async function buildPitch() {
     if (res.status === 401) { handleAuthError(); return; }
     if (!res.ok) throw new Error(`Backend ${res.status}: ${await res.text()}`);
     const data = await res.json();
-    saveToHistory({ company, website, data: data.story });
     renderOutput(data.story, { company, website });
     if (data.url) _lastPublishedUrl = data.url;
   } catch (err) {
@@ -2341,7 +2286,6 @@ function renderSource(source) {
 
 document.getElementById('input-screen').style.display = 'flex';
 (function init() {
-  renderHistory();
   // Load stats counter
   if (BACKEND_URL) {
     fetch(`${BACKEND_URL}/stats`)
