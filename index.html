@@ -39,13 +39,14 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      justify-content: center;
     }
 
     .hero {
       position: relative;
       overflow: hidden;
       background: var(--val-black);
-      padding: var(--sp-8) var(--sp-6) var(--sp-6);
+      padding: var(--sp-3) var(--sp-6) var(--sp-2);
     }
 
     .hero-shape {
@@ -65,24 +66,24 @@
     }
 
     .logo-wrap {
-      margin-bottom: var(--sp-6);
+      margin-bottom: var(--sp-2);
     }
 
     .eyebrow {
-      font-size: 13px;
+      font-size: 11px;
       font-weight: 600;
       letter-spacing: .15em;
       text-transform: uppercase;
       color: var(--val-peach);
       display: block;
-      margin-bottom: var(--sp-2);
+      margin-bottom: var(--sp-1);
     }
 
     .hero h1 {
-      font-size: clamp(32px, 5vw, 52px);
+      font-size: clamp(24px, 3.5vw, 38px);
       font-weight: 700;
       line-height: 1.1;
-      margin-bottom: var(--sp-3);
+      margin-bottom: var(--sp-2);
       background: var(--val-gradient);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -99,12 +100,8 @@
     .form-section {
       background: rgba(255,255,255,0.03);
       border-top: 1px solid rgba(255,255,255,0.08);
-      padding: var(--sp-6);
-      flex: 1;
+      padding: var(--sp-4) var(--sp-6);
       position: relative;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
     }
 
     .form-grid {
@@ -1138,21 +1135,21 @@
 
       <span class="eyebrow">Stripe Pitcher · Beta</span>
       <h1>Vom Prospect zum Pitch</h1>
-      <div style="margin-top:var(--sp-3);font-size:15px;color:rgba(255,255,255,0.72);line-height:1.8;">
-        <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;">
+      <div style="margin-top:8px;font-size:13px;color:rgba(255,255,255,0.65);line-height:1.5;">
+        <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:4px;">
           <span style="color:var(--val-coral);font-weight:700;flex-shrink:0;">•</span>
           <span>Gib den Unternehmensnamen und die Website ein</span>
         </div>
-        <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;">
+        <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:4px;">
           <span style="color:var(--val-coral);font-weight:700;flex-shrink:0;">•</span>
           <span>Validiere den Mapping Entwurf</span>
         </div>
-        <div style="display:flex;align-items:flex-start;gap:12px;">
+        <div style="display:flex;align-items:flex-start;gap:10px;">
           <span style="color:var(--val-coral);font-weight:700;flex-shrink:0;">•</span>
           <span>Versende den massgeschneiderten Pitch</span>
         </div>
       </div>
-      <div id="stats-bar" style="margin-top:14px;font-size:12px;color:rgba(255,255,255,.35);display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+      <div id="stats-bar" style="margin-top:8px;font-size:11px;color:rgba(255,255,255,.3);display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
         <span id="stats-count" style="display:flex;align-items:center;gap:5px;"><span style="width:6px;height:6px;border-radius:50%;background:#ff4b4b;display:inline-block;animation:pulse 2s infinite;"></span>Loading…</span>
       </div>
     </div>
