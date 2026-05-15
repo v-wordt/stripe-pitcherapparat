@@ -1,10 +1,10 @@
-import { put, list } from '@vercel/blob';
+import { put, list, del } from '@vercel/blob';
 
 const SHARED_SECRET = process.env.SHARED_SECRET;
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-valantic-secret');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -39,6 +39,20 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     } catch (err) {
       console.error('[custom-fields] POST error:', err.message);
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
+  if (req.method === 'DELETE') {
+    if (!SHARED_SECRET || req.headers['x-valantic-secret'] !== SHARED_SECRET) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    try {
+      const { blobs } = await list({ prefix: 'config/custom-fields.json' });
+      if (blobs.length > 0) await del(blobs[0].url);
+      return res.status(200).json({ ok: true });
+    } catch (err) {
+      console.error('[custom-fields] DELETE error:', err.message);
       return res.status(500).json({ error: err.message });
     }
   }

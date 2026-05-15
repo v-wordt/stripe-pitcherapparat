@@ -102,6 +102,9 @@
       padding: var(--sp-6);
       flex: 1;
       position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
 
     .form-grid {
@@ -192,7 +195,7 @@
     .generate-btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
 
     /* ── Field selector chips ───────────────────────────────────────────── */
-    .field-selector { display:flex; gap:8px; justify-content:center; margin-top:20px; flex-wrap:wrap; }
+    .field-selector { display:flex; gap:8px; justify-content:center; margin-top:20px; flex-wrap:wrap; align-items:flex-end; }
     .field-chip {
       display:inline-flex; align-items:center; gap:6px;
       padding:7px 14px; border-radius:20px;
@@ -1341,11 +1344,31 @@ function renderFieldSelector() {
         Standard-Suchfelder Unternehmensprofil
         <button class="fm-icon-btn" style="margin-left:2px;" onclick="event.stopPropagation();openFieldsModal(true)" title="Anzeigen"><i class="ph ph-eye"></i></button>
       </div>
-      <div class="field-chip${_useCustomFields ? ' active' : ''}" onclick="selectFieldList(true)" role="button" tabindex="0">
-        <button class="fm-icon-btn" style="margin-right:2px;" onclick="event.stopPropagation();openFieldsModal(false)" title="Bearbeiten"><i class="ph ph-pencil-simple"></i></button>
-        Angepasste Suchfelder Unternehmensprofil
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <button onclick="deleteCustomFields()" title="Angepasste Liste löschen" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.2);font-size:16px;padding:0;line-height:1;transition:color 0.15s;" onmouseover="this.style.color='rgba(255,255,255,0.65)'" onmouseout="this.style.color='rgba(255,255,255,0.2)'"><i class="ph ph-x-circle"></i></button>
+        <div class="field-chip${_useCustomFields ? ' active' : ''}" onclick="selectFieldList(true)" role="button" tabindex="0">
+          <button class="fm-icon-btn" style="margin-right:2px;" onclick="event.stopPropagation();openFieldsModal(false)" title="Bearbeiten"><i class="ph ph-pencil-simple"></i></button>
+          Angepasste Suchfelder Unternehmensprofil
+        </div>
       </div>
     </div>`;
+  }
+}
+
+async function deleteCustomFields() {
+  if (!confirm('Angepasste Suchfelder löschen?')) return;
+  try {
+    const res = await fetch(`${BACKEND_URL}/custom-fields`, {
+      method: 'DELETE',
+      headers: { 'x-valantic-secret': sessionStorage.getItem('vauth_token') || '' }
+    });
+    if (!res.ok) throw new Error(`Backend ${res.status}`);
+    _customFields = null;
+    _useCustomFields = false;
+    renderFieldSelector();
+  } catch (err) {
+    console.error('[custom-fields] delete failed:', err);
+    alert('Löschen fehlgeschlagen');
   }
 }
 
