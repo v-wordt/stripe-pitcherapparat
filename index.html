@@ -157,16 +157,16 @@
       align-items: center;
       gap: var(--sp-1);
       padding: 16px 32px;
-      background: var(--val-gradient);
-      color: var(--val-white);
+      background: none;
+      color: rgba(255,255,255,0.8);
       font-family: 'Maven Pro', sans-serif;
       font-weight: 700;
       font-size: 16px;
-      border: none;
+      border: 1.5px solid rgba(255,255,255,0.25);
       border-radius: 10px;
       cursor: pointer;
       margin-top: var(--sp-4);
-      transition: opacity 0.2s, transform 0.1s;
+      transition: opacity 0.2s, transform 0.1s, background 0.2s, border-color 0.2s, color 0.2s;
       width: 100%;
       justify-content: center;
       max-width: 800px;
@@ -175,20 +175,20 @@
       display: flex;
     }
 
-    .generate-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .generate-btn:hover { background: var(--val-gradient); color: white; border-color: transparent; transform: translateY(-1px); }
     .generate-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
     .generate-btn-secondary {
       display: flex; align-items: center; justify-content: center; gap: var(--sp-1);
       padding: 16px 32px; font-family: 'Maven Pro', sans-serif;
       font-weight: 700; font-size: 16px; border-radius: 10px; cursor: pointer;
-      transition: opacity 0.2s, transform 0.1s, border-color 0.2s, color 0.2s;
+      transition: opacity 0.2s, transform 0.1s, background 0.2s, border-color 0.2s, color 0.2s;
       flex: 1;
       background: none;
       border: 1.5px solid rgba(255,255,255,0.25);
       color: rgba(255,255,255,0.8);
     }
-    .generate-btn-secondary:hover { border-color: rgba(255,255,255,0.55); color: white; transform: translateY(-1px); }
+    .generate-btn-secondary:hover { background: var(--val-gradient); color: white; border-color: transparent; transform: translateY(-1px); }
     .generate-btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
 
     .seed-note {
