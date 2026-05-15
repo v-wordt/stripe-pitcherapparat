@@ -2258,6 +2258,38 @@ async function startQuickPitch() {
 }
 
 // ── PROSPECT PROFILE STAGE ────────────────────────────────────────────────
+const RESEARCH_CONCURRENCY = 3;
+
+const _sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+function _isTransient(msg) {
+  return /\b(429|502|503|504|529)\b|rate.?limit|overloaded|timeout|fetch failed|network|ETIMEDOUT/i.test(String(msg || ''));
+}
+
+// Retry transient (rate-limit / overloaded / timeout) failures with
+// exponential backoff + jitter; fail fast on everything else.
+async function _withBackoff(fn, attempts = 4) {
+  let delay = 1500;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (i === attempts - 1 || !_isTransient(err && err.message)) throw err;
+      await _sleep(delay + Math.random() * 1000);
+      delay *= 2.4;
+    }
+  }
+}
+
+// Minimal promise pool: at most `limit` tasks in flight at once.
+async function _runPool(tasks, limit) {
+  let i = 0;
+  const workers = Array.from({ length: Math.min(limit, tasks.length) }, async () => {
+    while (i < tasks.length) await tasks[i++]();
+  });
+  await Promise.all(workers);
+}
+
 async function startResearch() {
   const company = document.getElementById('contact-company').value.trim();
 
@@ -2372,6 +2404,34 @@ async function startResearch() {
   const remaining = {};
   activeCategories.forEach(c => { remaining[c] = [...(categoryFields[c] || [])]; });
 
+  // All batch requests in a round go through one bounded pool so we never
+  // burst the API (the cause of late-round 429s that left chips red).
+  async function runRound(label, jobs) {
+    let sawTransient = false;
+    const cats = new Set(jobs.map(j => j.category));
+    cats.forEach(c => {
+      const chipEl = document.getElementById(`cat-chip-${catId(c)}`);
+      if (chipEl) chipEl.className = 'cat-chip loading';
+    });
+    const tasks = jobs.map(({ category, batch, strat }) => async () => {
+      try {
+        const data = await _withBackoff(() => fetchCategory(category, batch, strat));
+        Object.assign(assembled[category], data.result || {});
+      } catch (err) {
+        lastBackendError = err.message;
+        if (_isTransient(err.message)) sawTransient = true;
+        console.warn(`[research] ${label} ${category} batch failed:`, err.message);
+      }
+    });
+    await _runPool(tasks, RESEARCH_CONCURRENCY);
+    cats.forEach(category => {
+      remaining[category] = remaining[category].filter(f => !fieldAnswered(category, f));
+      const chipEl = document.getElementById(`cat-chip-${catId(category)}`);
+      if (chipEl) chipEl.className = remaining[category].length === 0 ? 'cat-chip done' : 'cat-chip pending';
+    });
+    return sawTransient;
+  }
+
   for (let round = 1; round <= MAX_ROUNDS && !authFailed; round++) {
     const pending = activeCategories.filter(c => remaining[c].length > 0);
     if (pending.length === 0) break;
@@ -2380,25 +2440,33 @@ async function startResearch() {
       ? 'Kategorien werden recherchiert…'
       : `Nachrecherche Runde ${round} – ${pending.length} Kategorie(n)`;
 
-    await Promise.all(pending.map(async (category) => {
-      const chipEl = document.getElementById(`cat-chip-${catId(category)}`);
-      if (chipEl) chipEl.className = 'cat-chip loading';
+    const jobs = [];
+    for (const category of pending) {
       const size = strat.batchSize === 'half'
         ? Math.max(1, Math.ceil(remaining[category].length / 2))
         : strat.batchSize;
-      const batches = chunk(remaining[category], size);
-      await Promise.all(batches.map(async (batch) => {
-        try {
-          const data = await fetchCategory(category, batch, strat);
-          Object.assign(assembled[category], data.result || {});
-        } catch (err) {
-          lastBackendError = err.message;
-          console.warn(`[research] ${category} batch failed (round ${round}):`, err.message);
-        }
-      }));
-      remaining[category] = remaining[category].filter(f => !fieldAnswered(category, f));
-      if (chipEl) chipEl.className = remaining[category].length === 0 ? 'cat-chip done' : 'cat-chip pending';
-    }));
+      for (const batch of chunk(remaining[category], size)) jobs.push({ category, batch, strat });
+    }
+    const sawTransient = await runRound(`round ${round}`, jobs);
+
+    const stillPending = activeCategories.some(c => remaining[c].length > 0);
+    if (stillPending && round < MAX_ROUNDS && sawTransient && !authFailed) {
+      document.getElementById('loading-sub').textContent = 'Kurze Pause wegen API-Limit…';
+      await _sleep(4000);
+    }
+  }
+
+  // Automatic settling pass: mimic the (working) manual retry — delayed,
+  // single field per call, low concurrency, with backoff.
+  if (!authFailed && activeCategories.some(c => remaining[c].length > 0)) {
+    document.getElementById('loading-sub').textContent = 'Abschliessende Nachrecherche…';
+    await _sleep(5000);
+    const strat = { batchSize: 1, modelHint: 'light', maxUses: 1 };
+    const jobs = [];
+    for (const category of activeCategories) {
+      for (const f of remaining[category]) jobs.push({ category, batch: [f], strat });
+    }
+    if (jobs.length) await runRound('settling', jobs);
   }
 
   // Overlay verified identity anchors so the authoritative address/legal name wins.
@@ -2448,23 +2516,30 @@ async function retryCategory(category) {
   if (fieldsLeft.length === 0) return;
   if (!ctx.assembled[category]) ctx.assembled[category] = {};
 
-  await Promise.all(fieldsLeft.map(async (field) => {
+  const tasks = fieldsLeft.map((field) => async () => {
     try {
-      const res = await fetch(`${BACKEND_URL}/research-category`, {
-        method: 'POST',
-        headers: ctx.headers,
-        body: JSON.stringify({
-          company: ctx.company, website: ctx.website, anchor: ctx.anchor,
-          category, fields: [field], modelHint: 'light', searchMaxUses: 1
-        })
+      await _withBackoff(async () => {
+        const res = await fetch(`${BACKEND_URL}/research-category`, {
+          method: 'POST',
+          headers: ctx.headers,
+          body: JSON.stringify({
+            company: ctx.company, website: ctx.website, anchor: ctx.anchor,
+            category, fields: [field], modelHint: 'light', searchMaxUses: 1
+          })
+        });
+        if (!res.ok) {
+          let detail = `Backend ${res.status}`;
+          try { const b = await res.json(); if (b && b.error) detail = `${res.status}: ${b.error}`; } catch {}
+          throw new Error(detail);
+        }
+        const data = await res.json();
+        Object.assign(ctx.assembled[category], data.result || {});
       });
-      if (!res.ok) throw new Error(`Backend ${res.status}`);
-      const data = await res.json();
-      Object.assign(ctx.assembled[category], data.result || {});
     } catch (err) {
       console.warn(`[research] manual retry ${category}/${field} failed:`, err.message);
     }
-  }));
+  });
+  await _runPool(tasks, RESEARCH_CONCURRENCY);
 
   ctx.remaining[category] = (ctx.remaining[category] || []).filter(f => {
     const d = ctx.assembled[category] && ctx.assembled[category][f];

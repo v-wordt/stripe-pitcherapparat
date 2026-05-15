@@ -68,7 +68,8 @@ Identify the real legal entity, resolve its official primary website, and establ
       anchor: parsed.anchor || {}
     });
   } catch (err) {
-    console.error(`[research-seed] "${company}" error:`, err.message);
-    return res.status(500).json({ error: err.message });
+    const status = Number.isInteger(err?.status) ? err.status : 500;
+    console.error(`[research-seed] "${company}" error (${status}):`, err.message);
+    return res.status(status).json({ error: err.message, status });
   }
 }

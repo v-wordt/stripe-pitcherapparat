@@ -103,7 +103,8 @@ ${fieldKeys}
     const result = parsed[category] ?? parsed;
     return res.status(200).json({ category, result });
   } catch (err) {
-    console.error(`[research-category] ${category} error:`, err.message);
-    return res.status(500).json({ error: err.message });
+    const status = Number.isInteger(err?.status) ? err.status : 500;
+    console.error(`[research-category] ${category} error (${status}):`, err.message);
+    return res.status(status).json({ error: err.message, status });
   }
 }
