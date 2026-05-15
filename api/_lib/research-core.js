@@ -52,13 +52,15 @@ export async function runGroundedJson({
   userMessage,
   instruction,
   maxTokens = 3000,
-  maxContinuations = 3
+  maxContinuations = 3,
+  searchMaxUses
 }) {
   const messages = [{
     role: 'user',
     content: `${userMessage}\n\n${instruction}`
   }];
 
+  const searchTool = { ...WEB_SEARCH_TOOL, max_uses: searchMaxUses ?? WEB_SEARCH_TOOL.max_uses };
   let useWebSearch = true;
 
   for (let attempt = 0; attempt <= maxContinuations; attempt++) {
@@ -71,7 +73,7 @@ export async function runGroundedJson({
         thinking: { type: 'disabled' },
         output_config: { effort: 'low' },
         system,
-        tools: useWebSearch ? [WEB_SEARCH_TOOL] : [],
+        tools: useWebSearch ? [searchTool] : [],
         messages
       });
     } catch (err) {

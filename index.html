@@ -357,11 +357,36 @@
       background: rgba(76,175,80,0.07);
       animation: none;
     }
+    .cat-chip.pending {
+      border-color: #e0a000;
+      color: #e0a000;
+      background: rgba(224,160,0,0.08);
+      animation: none;
+    }
     .cat-chip.error {
       border-color: rgba(255,100,100,0.45);
       color: rgba(255,100,100,0.65);
       background: rgba(255,100,100,0.05);
       animation: none;
+    }
+    .cat-retry-btn {
+      margin-left: 10px;
+      font-size: 11px;
+      font-weight: 500;
+      padding: 2px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,100,100,0.5);
+      background: rgba(255,100,100,0.08);
+      color: rgba(255,140,140,0.9);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .cat-retry-btn:hover:not(:disabled) {
+      background: rgba(255,100,100,0.18);
+    }
+    .cat-retry-btn:disabled {
+      opacity: 0.5;
+      cursor: default;
     }
 
     /* ── EDIT PANEL ── */
@@ -2130,6 +2155,7 @@ let _lastInput = null;
 let _currentProfile = null;
 let _profileChat = [];
 let _profileIterations = 0;
+let _researchCtx = null;
 let _currentMapping = null;
 let _mappingChat = [];
 let _mappingIterations = 0;
@@ -2292,38 +2318,76 @@ async function startResearch() {
   document.getElementById('loading-sub').textContent = 'Kategorien werden parallel recherchiert';
   progressEl.style.display = 'flex';
 
-  async function fetchCategory(category) {
-    const allFields = categoryFields[category] || [];
+  const MAX_ROUNDS = 5;
+
+  function chunk(arr, size) {
+    if (!isFinite(size) || size >= arr.length) return [arr];
+    const out = [];
+    for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+    return out;
+  }
+
+  // Progressive degradation: a retry only helps if it is cheaper/faster than
+  // the call that just timed out (Vercel hard-kills at 60s).
+  function roundStrategy(round) {
+    if (round <= 1) return { batchSize: Infinity, modelHint: null, maxUses: 4 };
+    if (round === 2) return { batchSize: 'half', modelHint: 'light', maxUses: 3 };
+    if (round === 3) return { batchSize: 2, modelHint: 'light', maxUses: 2 };
+    if (round === 4) return { batchSize: 2, modelHint: 'light', maxUses: 2 };
+    return { batchSize: 1, modelHint: 'light', maxUses: 1 };
+  }
+
+  function fieldAnswered(category, f) {
+    const d = assembled[category] && assembled[category][f];
+    return !!(d && typeof d.value === 'string' && d.value.trim());
+  }
+
+  async function fetchCategory(category, fieldsSubset, strat) {
     const res = await fetch(`${BACKEND_URL}/research-category`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ company, website: seedWebsite, anchor: seedAnchor, category, fields: allFields })
+      body: JSON.stringify({
+        company, website: seedWebsite, anchor: seedAnchor, category,
+        fields: fieldsSubset,
+        modelHint: strat.modelHint || undefined,
+        searchMaxUses: strat.maxUses
+      })
     });
     if (res.status === 401) { authFailed = true; throw new Error('Unauthorized'); }
     if (!res.ok) throw new Error(`Backend ${res.status}`);
     return res.json();
   }
 
-  await Promise.all(activeCategories.map(async (category) => {
-    const chipEl = document.getElementById(`cat-chip-${catId(category)}`);
-    if (chipEl) chipEl.className = 'cat-chip loading';
-    try {
-      let data;
-      try {
-        data = await fetchCategory(category);
-      } catch (err) {
-        if (authFailed) throw err;
-        console.warn(`[research] ${category} failed, retrying once:`, err.message);
-        await new Promise(r => setTimeout(r, 1500));
-        data = await fetchCategory(category);
-      }
-      Object.assign(assembled[category], data.result || {});
-      if (chipEl) chipEl.className = 'cat-chip done';
-    } catch (err) {
-      console.error(`[research] ${category} failed:`, err.message);
-      if (chipEl) chipEl.className = 'cat-chip error';
-    }
-  }));
+  const remaining = {};
+  activeCategories.forEach(c => { remaining[c] = [...(categoryFields[c] || [])]; });
+
+  for (let round = 1; round <= MAX_ROUNDS && !authFailed; round++) {
+    const pending = activeCategories.filter(c => remaining[c].length > 0);
+    if (pending.length === 0) break;
+    const strat = roundStrategy(round);
+    document.getElementById('loading-sub').textContent = round === 1
+      ? 'Kategorien werden recherchiert…'
+      : `Nachrecherche Runde ${round} – ${pending.length} Kategorie(n)`;
+
+    await Promise.all(pending.map(async (category) => {
+      const chipEl = document.getElementById(`cat-chip-${catId(category)}`);
+      if (chipEl) chipEl.className = 'cat-chip loading';
+      const size = strat.batchSize === 'half'
+        ? Math.max(1, Math.ceil(remaining[category].length / 2))
+        : strat.batchSize;
+      const batches = chunk(remaining[category], size);
+      await Promise.all(batches.map(async (batch) => {
+        try {
+          const data = await fetchCategory(category, batch, strat);
+          Object.assign(assembled[category], data.result || {});
+        } catch (err) {
+          console.warn(`[research] ${category} batch failed (round ${round}):`, err.message);
+        }
+      }));
+      remaining[category] = remaining[category].filter(f => !fieldAnswered(category, f));
+      if (chipEl) chipEl.className = remaining[category].length === 0 ? 'cat-chip done' : 'cat-chip pending';
+    }));
+  }
 
   // Overlay verified identity anchors so the authoritative address/legal name wins.
   if (seedAnchor && Object.keys(seedAnchor).length > 0) {
@@ -2332,6 +2396,18 @@ async function startResearch() {
       if (data && data.value) assembled['Grundinformationen'][field] = data;
     }
   }
+
+  // Recompute remaining (the anchor overlay may have filled Grundinformationen
+  // fields whose category call failed) and expose context for manual retry.
+  activeCategories.forEach(c => {
+    remaining[c] = (categoryFields[c] || []).filter(f => {
+      const d = assembled[c] && assembled[c][f];
+      return !(d && typeof d.value === 'string' && d.value.trim());
+    });
+    const chipEl = document.getElementById(`cat-chip-${catId(c)}`);
+    if (chipEl && remaining[c].length > 0) chipEl.className = 'cat-chip error';
+  });
+  _researchCtx = { company, website: seedWebsite, anchor: seedAnchor, headers, categoryFields, remaining, assembled };
 
   progressEl.style.display = 'none';
   document.getElementById('loading-msg').textContent = 'Intelligence Layer is thinking…';
@@ -2353,13 +2429,50 @@ async function startResearch() {
   showProspectProfile();
 }
 
+async function retryCategory(category) {
+  if (!_researchCtx) return;
+  const ctx = _researchCtx;
+  const fieldsLeft = (ctx.remaining[category] || []).slice();
+  if (fieldsLeft.length === 0) return;
+  if (!ctx.assembled[category]) ctx.assembled[category] = {};
+
+  await Promise.all(fieldsLeft.map(async (field) => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/research-category`, {
+        method: 'POST',
+        headers: ctx.headers,
+        body: JSON.stringify({
+          company: ctx.company, website: ctx.website, anchor: ctx.anchor,
+          category, fields: [field], modelHint: 'light', searchMaxUses: 1
+        })
+      });
+      if (!res.ok) throw new Error(`Backend ${res.status}`);
+      const data = await res.json();
+      Object.assign(ctx.assembled[category], data.result || {});
+    } catch (err) {
+      console.warn(`[research] manual retry ${category}/${field} failed:`, err.message);
+    }
+  }));
+
+  ctx.remaining[category] = (ctx.remaining[category] || []).filter(f => {
+    const d = ctx.assembled[category] && ctx.assembled[category][f];
+    return !(d && typeof d.value === 'string' && d.value.trim());
+  });
+  _currentProfile = ctx.assembled;
+  renderProspectProfile();
+}
+
 function renderProspectProfile() {
   const area = document.getElementById('profile-table-area');
   if (!_currentProfile) { area.innerHTML = '<p>No profile data</p>'; return; }
 
   let html = '<table class="profile-table">';
   for (const [category, fields] of Object.entries(_currentProfile)) {
-    html += `<tr><td colspan="2" class="profile-category">${escapeHtml(category)}</td></tr>`;
+    const missing = (_researchCtx && _researchCtx.remaining && _researchCtx.remaining[category]) ? _researchCtx.remaining[category].length : 0;
+    const retryBtn = missing > 0
+      ? ` <button class="cat-retry-btn" data-retry-cat="${escapeHtml(category)}">Erneut versuchen (${missing})</button>`
+      : '';
+    html += `<tr><td colspan="2" class="profile-category">${escapeHtml(category)}${retryBtn}</td></tr>`;
     for (const [fieldName, fieldData] of Object.entries(fields)) {
       const value = fieldData?.value || '';
       const assumption = fieldData?.assumption || false;
@@ -2382,6 +2495,14 @@ function renderProspectProfile() {
   }
   html += '</table>';
   area.innerHTML = html;
+  area.querySelectorAll('.cat-retry-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const cat = btn.getAttribute('data-retry-cat');
+      btn.disabled = true;
+      btn.textContent = 'Läuft…';
+      await retryCategory(cat);
+    });
+  });
   document.getElementById('profile-next-btn').disabled = false;
   document.getElementById('profile-pdf-btn').disabled = false;
   document.querySelector('#prospect-profile-screen .research-iterations').textContent = `${_profileIterations} / 5 Überarbeitungen`;

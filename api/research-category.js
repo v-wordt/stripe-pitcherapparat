@@ -59,7 +59,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { company, website, anchor, category, fields } = req.body || {};
+  const { company, website, anchor, category, fields, modelHint, searchMaxUses } = req.body || {};
   if (!company || !category) {
     return res.status(400).json({ error: 'company and category required' });
   }
@@ -87,14 +87,18 @@ ${fieldKeys}
   }
 }`;
 
+    const model = modelHint === 'light' ? MODEL_LIGHT : (CATEGORY_MODEL[category] || MODEL_RESEARCH);
+    const maxTokens = Math.min(3000, 400 + fieldList_arr.length * 350);
+
     const parsed = await runGroundedJson({
-      model: CATEGORY_MODEL[category] || MODEL_RESEARCH,
+      model,
       system: buildSystemPrompt(),
       userMessage,
       instruction,
-      maxTokens: 3000
+      maxTokens,
+      searchMaxUses: typeof searchMaxUses === 'number' ? searchMaxUses : undefined
     });
-    console.log(`[research-category] ${category} took ${Date.now() - t0}ms`);
+    console.log(`[research-category] ${category} (${model}, ${fieldList_arr.length}f) took ${Date.now() - t0}ms`);
 
     const result = parsed[category] ?? parsed;
     return res.status(200).json({ category, result });
