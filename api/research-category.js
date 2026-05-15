@@ -1,6 +1,20 @@
-import { runSearchLoop } from './_lib/research-core.js';
+import { runGroundedJson, MODEL_RESEARCH, MODEL_LIGHT } from './_lib/research-core.js';
 
 const SHARED_SECRET = process.env.SHARED_SECRET;
+
+// Hybrid model split to fit Vercel's 60s cap: heavy categories need Sonnet's
+// reasoning/extraction; light ones run fine (and faster) on Haiku. Unknown or
+// custom categories default to Sonnet (safe).
+const CATEGORY_MODEL = {
+  'Finanzierung & Wachstum': MODEL_RESEARCH,
+  'Markt & Wettbewerb': MODEL_RESEARCH,
+  'Signale': MODEL_RESEARCH,
+  'Grösse und Struktur': MODEL_RESEARCH,
+  'Grundinformationen': MODEL_LIGHT,
+  'Geschäftstätigkeit': MODEL_LIGHT,
+  'Produkte & Services': MODEL_LIGHT,
+  'Technologie & Infrastructure': MODEL_LIGHT,
+};
 
 function buildSystemPrompt() {
   return `You are a B2B prospect research analyst. Research the requested category for the given company using web_search, then return ONLY a JSON object for the listed fields.
@@ -65,7 +79,7 @@ ${fieldList}
 
 When fetching/searching, prefer the official website and its /impressum, /about, /press, /investors subpages and authoritative third parties. For German companies the impressum is the authoritative source for address, legal form, and directors.`;
 
-    const synthesisMessage = `Based on everything you researched, return ONLY this JSON object. No further searching. No prose. No markdown fences.
+    const instruction = `After searching, return ONLY this JSON object. No prose. No markdown fences.
 
 {
   "${category}": {
@@ -73,12 +87,12 @@ ${fieldKeys}
   }
 }`;
 
-    const parsed = await runSearchLoop({
+    const parsed = await runGroundedJson({
+      model: CATEGORY_MODEL[category] || MODEL_RESEARCH,
       system: buildSystemPrompt(),
       userMessage,
-      synthesisMessage,
-      maxRounds: 2,
-      synthMaxTokens: 4096
+      instruction,
+      maxTokens: 3000
     });
     console.log(`[research-category] ${category} took ${Date.now() - t0}ms`);
 

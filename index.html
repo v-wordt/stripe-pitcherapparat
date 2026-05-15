@@ -2308,7 +2308,15 @@ async function startResearch() {
     const chipEl = document.getElementById(`cat-chip-${catId(category)}`);
     if (chipEl) chipEl.className = 'cat-chip loading';
     try {
-      const data = await fetchCategory(category);
+      let data;
+      try {
+        data = await fetchCategory(category);
+      } catch (err) {
+        if (authFailed) throw err;
+        console.warn(`[research] ${category} failed, retrying once:`, err.message);
+        await new Promise(r => setTimeout(r, 1500));
+        data = await fetchCategory(category);
+      }
       Object.assign(assembled[category], data.result || {});
       if (chipEl) chipEl.className = 'cat-chip done';
     } catch (err) {

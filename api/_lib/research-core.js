@@ -3,8 +3,9 @@ import Anthropic from '@anthropic-ai/sdk';
 export const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export const MODEL_RESEARCH = 'claude-sonnet-4-6';
+export const MODEL_LIGHT = 'claude-haiku-4-5-20251001';
 
-export const WEB_SEARCH_TOOL = { type: 'web_search_20250305', name: 'web_search', max_uses: 5 };
+export const WEB_SEARCH_TOOL = { type: 'web_search_20250305', name: 'web_search', max_uses: 4 };
 
 export function isInvalidToolError(err) {
   const msg = err && err.message ? String(err.message) : '';
@@ -29,64 +30,67 @@ export function parseStrictJson(response) {
   }
 }
 
-// Runs a web_search-grounded research loop, then forces a no-tool JSON synthesis turn.
-// - system: system prompt used for every turn
-// - userMessage: the initial user message (research brief + field list)
-// - synthesisMessage: appended after the loop to force the final JSON answer
-// - maxRounds: number of tool-use rounds the model may take before synthesis
-// Returns the parsed JSON object from the synthesis turn.
-export async function runSearchLoop({ system, userMessage, synthesisMessage, maxRounds = 2, synthMaxTokens = 4096 }) {
-  const messages = [{ role: 'user', content: userMessage }];
+// Single-request web-grounded JSON.
+//
+// web_search_20250305 is a SERVER-side tool: Anthropic runs the searches inside
+// one messages.create request and the model returns its final answer in the same
+// response. So there is no client-side tool loop and no separate synthesis turn —
+// just one request (plus pause_turn continuations for long turns). This is what
+// keeps each call well under the Vercel 60s cap.
+//
+// - model:          caller-chosen (Sonnet for heavy work, Haiku for light)
+// - system:         system prompt
+// - userMessage:    research brief / field list
+// - instruction:    appended to the user turn — "after searching, output ONLY this JSON ..."
+// - maxTokens:      output cap (small: these JSON payloads are short)
+// - maxContinuations: how many pause_turn continuations to allow
+//
+// Returns the parsed JSON object.
+export async function runGroundedJson({
+  model = MODEL_RESEARCH,
+  system,
+  userMessage,
+  instruction,
+  maxTokens = 3000,
+  maxContinuations = 3
+}) {
+  const messages = [{
+    role: 'user',
+    content: `${userMessage}\n\n${instruction}`
+  }];
+
   let useWebSearch = true;
 
-  for (let turn = 0; turn < maxRounds; turn++) {
+  for (let attempt = 0; attempt <= maxContinuations; attempt++) {
     const t = Date.now();
-    const tools = useWebSearch ? [WEB_SEARCH_TOOL] : [];
-
     let response;
     try {
       response = await client.messages.create({
-        model: MODEL_RESEARCH,
-        max_tokens: 4096,
+        model,
+        max_tokens: maxTokens,
         thinking: { type: 'disabled' },
         output_config: { effort: 'low' },
         system,
-        tools,
+        tools: useWebSearch ? [WEB_SEARCH_TOOL] : [],
         messages
       });
     } catch (err) {
       if (useWebSearch && isInvalidToolError(err)) {
-        console.warn('web_search rejected — degrading to no-tool synthesis:', err.message);
+        console.warn('web_search rejected — retrying once without tools:', err.message);
         useWebSearch = false;
-        break;
+        continue;
       }
       throw err;
     }
-    console.log(`[research-core] turn ${turn + 1} took ${Date.now() - t}ms (stop_reason=${response.stop_reason})`);
+    console.log(`[research-core] ${model} turn ${attempt + 1} took ${Date.now() - t}ms (stop_reason=${response.stop_reason})`);
 
     if (response.stop_reason === 'pause_turn') {
       messages.push({ role: 'assistant', content: response.content });
       continue;
     }
 
-    const toolUses = response.content.filter(b => b.type === 'tool_use');
-    messages.push({ role: 'assistant', content: response.content });
-    if (toolUses.length === 0) break;
-    // web_search is a server tool: results are injected by the API; just continue the loop.
+    return parseStrictJson(response);
   }
 
-  messages.push({ role: 'user', content: synthesisMessage });
-
-  const tSynth = Date.now();
-  const synthResponse = await client.messages.create({
-    model: MODEL_RESEARCH,
-    max_tokens: synthMaxTokens,
-    thinking: { type: 'adaptive' },
-    output_config: { effort: 'medium' },
-    system,
-    messages
-  });
-  console.log(`[research-core] synthesis took ${Date.now() - tSynth}ms (stop_reason=${synthResponse.stop_reason})`);
-
-  return parseStrictJson(synthResponse);
+  throw new Error(`runGroundedJson exhausted ${maxContinuations} continuations without a final answer`);
 }

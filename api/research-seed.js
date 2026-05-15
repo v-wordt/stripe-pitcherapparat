@@ -1,4 +1,4 @@
-import { runSearchLoop } from './_lib/research-core.js';
+import { runGroundedJson, MODEL_RESEARCH } from './_lib/research-core.js';
 
 const SHARED_SECRET = process.env.SHARED_SECRET;
 
@@ -11,7 +11,7 @@ MANDATORY PROCESS:
 
 SOURCING RULE (strict): Every value MUST carry the exact source URL of the page that stated it. Uncited model knowledge is NEVER an acceptable source. If after genuine searching a fact cannot be sourced, mark it "Nicht öffentlich verfügbar" with source null — but for official name, address, and legal form this should essentially never happen for a real company.`;
 
-const ANCHOR_SYNTHESIS = `Return ONLY this JSON object. No prose, no markdown fences.
+const ANCHOR_INSTRUCTION = `After searching, return ONLY this JSON object. No prose, no markdown fences.
 
 JSON rules: straight ASCII double quotes only; escape literal " inside strings as \\"; escape \\ as \\\\; no literal newlines inside string values; no trailing commas.
 
@@ -52,12 +52,12 @@ export default async function handler(req, res) {
 
 Identify the real legal entity, resolve its official primary website, and establish its authoritative identity anchors (official name, registered head-office address, legal form, founding year). Search the impressum / Handelsregister / Wikipedia specifically for the address and legal form.`;
 
-    const parsed = await runSearchLoop({
+    const parsed = await runGroundedJson({
+      model: MODEL_RESEARCH,
       system: ANCHOR_SYSTEM,
       userMessage,
-      synthesisMessage: ANCHOR_SYNTHESIS,
-      maxRounds: 2,
-      synthMaxTokens: 2048
+      instruction: ANCHOR_INSTRUCTION,
+      maxTokens: 2048
     });
     console.log(`[research-seed] "${company}" took ${Date.now() - t0}ms`);
 
