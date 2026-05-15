@@ -1,20 +1,38 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { runSearchLoop } from './_lib/research-core.js';
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const SHARED_SECRET = process.env.SHARED_SECRET;
-const MODEL = 'claude-haiku-4-5-20251001';
 
-async function searchWithJina(query) {
-  try {
-    const res = await fetch(`https://s.jina.ai/${encodeURIComponent(query)}`, {
-      headers: { 'Accept': 'text/plain' },
-      signal: AbortSignal.timeout(20000)
-    });
-    if (!res.ok) return null;
-    return (await res.text()).slice(0, 6000);
-  } catch {
-    return null;
-  }
+function buildSystemPrompt() {
+  return `You are a B2B prospect research analyst. Research the requested category for the given company using web_search, then return ONLY a JSON object for the listed fields.
+
+MANDATORY PROCESS:
+- Use web_search to find evidence for each field. Search company-controlled pages (homepage, /impressum, /about, /investors, /press, /careers), then authoritative third parties (Wikipedia DE+EN, Handelsregister, regulatory filings, named press: Handelsblatt, FAZ, Reuters, Bloomberg, NZZ), then lower-tier signals (LinkedIn, Crunchbase, news).
+- After searching, check which fields are still empty or weak and search specifically for those gaps before answering.
+
+DECISION LADDER (apply per field):
+1. Direct evidence — a search result states the value. source MUST be the exact URL of that page. confidence: "high". COMPACT shape.
+2. Reasoned estimate — no direct source after genuine searching, but related cited signals support an inference (e.g. headcount from LinkedIn, revenue from headcount x industry benchmark). assumption: true, terse assumptionNote, source: "estimate", confidence: "medium"|"low". FULL shape.
+3. Last resort — even a defensible estimate is impossible: value: "Nicht öffentlich verfügbar", source: null, confidence: "low".
+
+ABSOLUTE SOURCING RULE: Uncited model knowledge is NEVER an acceptable source. There is no "training_knowledge" option. If you have no citation you MUST run web_search; only after genuine search failure may you estimate (source "estimate") or mark the field unavailable. Every "high" confidence value must have a real URL as its source.
+
+JSON rules: straight ASCII double quotes only; escape literal " inside strings as \\"; escape \\ as \\\\; no literal newlines inside string values; no trailing commas; no markdown fences.
+
+COMPACT shape (assumption false):
+{ "value": "...", "source": "https://exact-source-url|null", "confidence": "high|medium|low" }
+
+FULL shape (assumption true only):
+{ "value": "...", "assumption": true, "assumptionNote": "<=20 words", "source": "estimate", "confidence": "medium|low" }
+
+Length limits: "value" max 25 words (addresses, names, URLs may be longer); "assumptionNote" max 20 words.`;
+}
+
+function anchorBlock(anchor) {
+  if (!anchor || typeof anchor !== 'object' || Object.keys(anchor).length === 0) return '';
+  const lines = Object.entries(anchor)
+    .map(([k, v]) => `  - ${k}: ${v && v.value ? v.value : '(unknown)'}${v && v.source ? ` [source: ${v.source}]` : ''}`)
+    .join('\n');
+  return `\nVERIFIED IDENTITY ANCHORS (already researched — treat as authoritative, stay consistent with these, do not contradict them):\n${lines}\n`;
 }
 
 export default async function handler(req, res) {
@@ -27,7 +45,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { company, category, fields } = req.body || {};
+  const { company, website, anchor, category, fields } = req.body || {};
   if (!company || !category) {
     return res.status(400).json({ error: 'company and category required' });
   }
@@ -36,60 +54,35 @@ export default async function handler(req, res) {
   try {
     const t0 = Date.now();
 
-    const searchResults = await searchWithJina(`"${company}" ${category}`);
-
     const fieldList = fieldList_arr.map(f => `  - ${f}`).join('\n') || '  (research all standard fields for this category)';
     const fieldKeys = fieldList_arr.map(f => `    "${f}": { ... }`).join(',\n') || `    "<field>": { ... }`;
 
-    const systemPrompt = `You are a B2B prospect research analyst. Extract information from the search results provided and return ONLY a JSON object for the fields listed. No prose, no markdown fences.
+    const userMessage = `Company: "${company}"${website ? `\nOfficial website: ${website}` : ''}
+Category to research: "${category}"
+${anchorBlock(anchor)}
+Research and extract these fields using web_search:
+${fieldList}
 
-Decision ladder (apply per field):
-1. Direct evidence from search results → use the exact URL from the search result as "source" (e.g. "https://www.zalando.de/impressum"). confidence: "high". COMPACT shape.
-2. Reasoned estimate from signals in the search results → assumption: true, assumptionNote ≤20 words, confidence: "medium"|"low", source: "estimate". FULL shape.
-3. Training knowledge only (no supporting search result) → source: "training_knowledge", confidence: "medium"|"low". COMPACT shape.
-4. Last resort only → value: "Nicht öffentlich verfügbar", confidence: "low", source: null. Must be rare.
+When fetching/searching, prefer the official website and its /impressum, /about, /press, /investors subpages and authoritative third parties. For German companies the impressum is the authoritative source for address, legal form, and directors.`;
 
-SOURCE RULE: The search results contain URLs. Always prefer a real URL over "training_knowledge". Extract the URL of the page that gave you the evidence and use it as "source".
+    const synthesisMessage = `Based on everything you researched, return ONLY this JSON object. No further searching. No prose. No markdown fences.
 
-JSON rules: ASCII straight double quotes only. Escape literal " inside strings as \\". No trailing commas. No markdown.
-
-COMPACT shape (use when assumption is false):
-{ "value": "...", "source": "https://example.com/page|training_knowledge|null", "confidence": "high|medium|low" }
-
-FULL shape (use only when assumption is true):
-{ "value": "...", "assumption": true, "assumptionNote": "...", "source": "estimate", "confidence": "medium|low" }
-
-Return exactly this structure and nothing else:
 {
   "${category}": {
 ${fieldKeys}
   }
 }`;
 
-    const userMessage = `Company: "${company}", Category: "${category}"
-
-SEARCH RESULTS:
-${searchResults || '(no search results available — use training knowledge)'}
-
-Extract these fields:
-${fieldList}
-
-Return the JSON now.`;
-
-    const response = await client.messages.create({
-      model: MODEL,
-      max_tokens: 2048,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userMessage }]
+    const parsed = await runSearchLoop({
+      system: buildSystemPrompt(),
+      userMessage,
+      synthesisMessage,
+      maxRounds: 2,
+      synthMaxTokens: 4096
     });
-
-    const text = response.content.filter(b => b.type === 'text').map(b => b.text).join('');
     console.log(`[research-category] ${category} took ${Date.now() - t0}ms`);
 
-    const cleaned = text.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
-    const parsed = JSON.parse(cleaned);
     const result = parsed[category] ?? parsed;
-
     return res.status(200).json({ category, result });
   } catch (err) {
     console.error(`[research-category] ${category} error:`, err.message);

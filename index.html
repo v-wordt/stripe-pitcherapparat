@@ -2246,8 +2246,8 @@ async function startResearch() {
   _currentProfile = null;
 
   showLoading();
-  document.getElementById('loading-msg').textContent = 'Prospect wird recherchiert…';
-  document.getElementById('loading-sub').textContent = 'Kategorien werden nacheinander recherchiert';
+  document.getElementById('loading-msg').textContent = 'Offizielle Quellen werden recherchiert…';
+  document.getElementById('loading-sub').textContent = 'Domain und Identitätsdaten werden verifiziert';
 
   const categoryFields = (_useCustomFields && _customFields) ? _customFields : (window._categoryFields || {});
   const activeCategories = Object.keys(categoryFields).filter(c => (categoryFields[c] || []).length > 0);
@@ -2256,7 +2256,6 @@ async function startResearch() {
   progressEl.innerHTML = activeCategories.map(cat =>
     `<span class="cat-chip" id="cat-chip-${catId(cat)}">${cat}</span>`
   ).join('');
-  progressEl.style.display = 'flex';
 
   const headers = {
     'Content-Type': 'application/json',
@@ -2267,19 +2266,45 @@ async function startResearch() {
   activeCategories.forEach(cat => { assembled[cat] = {}; });
   let authFailed = false;
 
+  // Phase 1: resolve official domain + authoritative identity anchors.
+  let seedWebsite = null;
+  let seedAnchor = {};
+  try {
+    const seedRes = await fetch(`${BACKEND_URL}/research-seed`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ company })
+    });
+    if (seedRes.status === 401) { handleAuthError(); return; }
+    if (seedRes.ok) {
+      const seed = await seedRes.json();
+      seedWebsite = seed.website || null;
+      seedAnchor = seed.anchor || {};
+    } else {
+      console.error(`[research] seed failed: Backend ${seedRes.status}`);
+    }
+  } catch (err) {
+    console.error('[research] seed failed:', err.message);
+  }
+
+  // Phase 2: research each category in parallel, grounded by the shared anchor.
+  document.getElementById('loading-msg').textContent = 'Prospect wird recherchiert…';
+  document.getElementById('loading-sub').textContent = 'Kategorien werden parallel recherchiert';
+  progressEl.style.display = 'flex';
+
   async function fetchCategory(category) {
     const allFields = categoryFields[category] || [];
     const res = await fetch(`${BACKEND_URL}/research-category`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ company, category, fields: allFields })
+      body: JSON.stringify({ company, website: seedWebsite, anchor: seedAnchor, category, fields: allFields })
     });
     if (res.status === 401) { authFailed = true; throw new Error('Unauthorized'); }
     if (!res.ok) throw new Error(`Backend ${res.status}`);
     return res.json();
   }
 
-  for (const category of activeCategories) {
+  await Promise.all(activeCategories.map(async (category) => {
     const chipEl = document.getElementById(`cat-chip-${catId(category)}`);
     if (chipEl) chipEl.className = 'cat-chip loading';
     try {
@@ -2287,9 +2312,16 @@ async function startResearch() {
       Object.assign(assembled[category], data.result || {});
       if (chipEl) chipEl.className = 'cat-chip done';
     } catch (err) {
-      if (authFailed) break;
       console.error(`[research] ${category} failed:`, err.message);
       if (chipEl) chipEl.className = 'cat-chip error';
+    }
+  }));
+
+  // Overlay verified identity anchors so the authoritative address/legal name wins.
+  if (seedAnchor && Object.keys(seedAnchor).length > 0) {
+    if (!assembled['Grundinformationen']) assembled['Grundinformationen'] = {};
+    for (const [field, data] of Object.entries(seedAnchor)) {
+      if (data && data.value) assembled['Grundinformationen'][field] = data;
     }
   }
 
@@ -2590,7 +2622,7 @@ function renderSource(source) {
     return `<div class="profile-source">Quelle: Websuche „${escapeHtml(s.slice('web_search:'.length))}"</div>`;
   }
   if (s === 'estimate') return `<div class="profile-source">Quelle: Schätzung aus Signalen</div>`;
-  if (s === 'training_knowledge') return `<div class="profile-source">Quelle: Modellwissen</div>`;
+  if (s === 'training_knowledge') return `<div class="profile-source" style="color:#c0392b;font-weight:600;">⚠ Quelle: ungeprüftes Modellwissen (nicht belegt)</div>`;
   return `<div class="profile-source">Quelle: ${escapeHtml(s)}</div>`;
 }
 
