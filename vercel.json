@@ -22,6 +22,9 @@
     },
     "api/mapping.js": {
       "maxDuration": 60
+    },
+    "api/register.js": {
+      "maxDuration": 30
     }
   },
   "headers": [

@@ -289,6 +289,36 @@
       margin-right: auto;
     }
 
+    /* ── REGISTER ── */
+    #register-screen {
+      display: none;
+      flex-direction: column;
+      height: 100vh;
+      background: var(--val-black);
+      color: white;
+    }
+    .register-table { width: 100%; border-collapse: collapse; }
+    .register-table th { text-align: left; font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: #888; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .register-table td { padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.06); vertical-align: middle; }
+    .register-table td:first-child { font-weight: 500; font-size: 15px; }
+    .register-action-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: inherit; font-size: 13px; font-weight: 500;
+      padding: 7px 14px; border-radius: 8px; cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.06); color: white;
+      text-decoration: none; transition: background .15s;
+    }
+    .register-action-btn:hover:not(:disabled) { background: rgba(255,255,255,0.12); }
+    .register-action-btn:disabled { cursor: default; }
+    .generate-btn-ghost {
+      background: transparent; border: none; color: rgba(255,255,255,0.4);
+      font-family: inherit; font-size: 13px; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px; border-radius: 8px; transition: color .15s;
+    }
+    .generate-btn-ghost:hover { color: rgba(255,255,255,0.75); }
+
     /* ── LOADING ── */
     #loading-screen {
       display: none;
@@ -1213,9 +1243,49 @@
 
     <div id="field-selector-section"></div>
 
+    <div style="text-align:center;margin-top:var(--sp-2);">
+      <button class="generate-btn-ghost" onclick="showRegister()">
+        <i class="ph ph-list-bullets"></i> Unternehmensregister
+      </button>
+    </div>
+
     <p class="seed-note">Stripe × valantic · Powered by Claude</p>
   </div>
 
+</div>
+
+<!-- ══════════════════════════════════════════
+     REGISTER SCREEN
+══════════════════════════════════════════ -->
+<div id="register-screen">
+  <div class="research-topbar">
+    <div>
+      <div class="research-title">Unternehmensregister</div>
+      <div class="research-iterations" id="register-subtitle">Alle gespeicherten Unternehmen</div>
+    </div>
+    <button class="back-btn" onclick="showInput()"><i class="ph ph-arrow-left"></i> Zurück</button>
+  </div>
+
+  <div style="padding: var(--sp-3) var(--sp-6); border-bottom: 1px solid rgba(255,255,255,0.08); display:flex; gap: var(--sp-2);">
+    <input type="text" id="register-add-input" placeholder="Unternehmen hinzufügen…" style="flex:1;"
+      onkeydown="if(event.key==='Enter')addCompanyToRegister()">
+    <button class="chat-send-btn" onclick="addCompanyToRegister()"><i class="ph ph-plus"></i></button>
+  </div>
+
+  <div style="flex:1;overflow-y:auto;padding: var(--sp-3) var(--sp-6);">
+    <table class="register-table" id="register-table">
+      <thead>
+        <tr>
+          <th>Unternehmen</th>
+          <th>Prospect Profile</th>
+          <th>Stripe Briefing</th>
+        </tr>
+      </thead>
+      <tbody id="register-tbody">
+        <tr><td colspan="3" style="text-align:center;color:#888;padding:32px;">Wird geladen…</td></tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <!-- ══════════════════════════════════════════
@@ -2159,6 +2229,7 @@ let _researchCtx = null;
 let _currentMapping = null;
 let _mappingChat = [];
 let _mappingIterations = 0;
+let _currentRegisterId = null;
 
 function showInput(prefill) {
   document.getElementById('input-screen').style.display = 'flex';
@@ -2255,6 +2326,70 @@ async function startQuickPitch() {
     showInput();
     alert('Error: ' + (err.message || JSON.stringify(err)));
   }
+}
+
+// ── REGISTER ──────────────────────────────────────────────────────────────
+async function showRegister() {
+  document.querySelectorAll('[id$="-screen"]').forEach(s => s.style.display = 'none');
+  document.getElementById('register-screen').style.display = 'flex';
+  await loadRegister();
+}
+
+async function loadRegister() {
+  try {
+    const res = await fetch(`${BACKEND_URL}/register`);
+    const { companies } = await res.json();
+    renderRegister(companies);
+    document.getElementById('register-subtitle').textContent = `${companies.length} Unternehmen`;
+  } catch (err) {
+    document.getElementById('register-tbody').innerHTML =
+      `<tr><td colspan="3" style="text-align:center;color:#888;padding:32px;">Fehler beim Laden.</td></tr>`;
+  }
+}
+
+function renderRegister(companies) {
+  const tbody = document.getElementById('register-tbody');
+  if (!companies.length) {
+    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:#888;padding:32px;">Noch keine Unternehmen gespeichert.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = companies.map(c => {
+    const profileCell = c.profile
+      ? `<a href="${c.profile.pdfUrl}" target="_blank" class="register-action-btn"><i class="ph ph-file-pdf"></i> Download</a>`
+      : `<button class="register-action-btn" onclick="proceedToResearchFromRegister('${c.id}','${escapeHtml(c.name)}')"><i class="ph ph-sparkle"></i> Erstellen</button>`;
+
+    const briefingCell = c.briefing
+      ? `<a href="${c.briefing.pdfUrl}" target="_blank" class="register-action-btn"><i class="ph ph-file-pdf"></i> Download</a>`
+      : c.profile
+        ? `<button class="register-action-btn" disabled title="Coming soon"><i class="ph ph-sparkle"></i> Erstellen</button>`
+        : `<button class="register-action-btn" disabled style="opacity:.3;" title="Zuerst Prospect Profile erstellen"><i class="ph ph-sparkle"></i> Erstellen</button>`;
+
+    return `<tr>
+      <td>${escapeHtml(c.name)}</td>
+      <td>${profileCell}</td>
+      <td>${briefingCell}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function addCompanyToRegister() {
+  const input = document.getElementById('register-add-input');
+  const name = input.value.trim();
+  if (!name) return;
+  input.value = '';
+  await fetch(`${BACKEND_URL}/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-valantic-secret': sessionStorage.getItem('vauth_token') || '' },
+    body: JSON.stringify({ name }),
+  });
+  await loadRegister();
+}
+
+function proceedToResearchFromRegister(id, name) {
+  _currentRegisterId = id;
+  document.getElementById('contact-company').value = name;
+  showInput();
+  setTimeout(() => startResearch(), 100);
 }
 
 // ── PROSPECT PROFILE STAGE ────────────────────────────────────────────────
@@ -2505,6 +2640,16 @@ async function startResearch() {
   _currentProfile = assembled;
   _profileChat = [];
   _profileIterations = 0;
+
+  // Upsert company in shared register (fire-and-forget)
+  fetch(`${BACKEND_URL}/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-valantic-secret': sessionStorage.getItem('vauth_token') || '' },
+    body: JSON.stringify({ name: company }),
+  }).then(r => r.json()).then(({ company: entry }) => {
+    if (!_currentRegisterId) _currentRegisterId = entry.id;
+  }).catch(() => {});
+
   renderProspectProfile();
   showProspectProfile();
 }
@@ -2662,6 +2807,15 @@ async function downloadProfilePdf() {
     if (!res.ok) throw new Error(`Backend ${res.status}: ${await res.text()}`);
     const { url } = await res.json();
     window.open(url, '_blank');
+
+    // Persist PDF URL in register
+    if (_currentRegisterId) {
+      fetch(`${BACKEND_URL}/register`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-valantic-secret': sessionStorage.getItem('vauth_token') || '' },
+        body: JSON.stringify({ id: _currentRegisterId, profile: { pdfUrl: url } }),
+      }).catch(() => {});
+    }
   } catch (err) {
     alert('PDF konnte nicht erstellt werden: ' + err.message);
   } finally {
