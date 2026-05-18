@@ -5,7 +5,7 @@ export const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 export const MODEL_RESEARCH = 'claude-sonnet-4-6';
 export const MODEL_LIGHT = 'claude-haiku-4-5-20251001';
 
-export const WEB_SEARCH_TOOL = { type: 'web_search_20250305', name: 'web_search', max_uses: 4 };
+export const WEB_SEARCH_TOOL = { type: 'web_search_20250305', name: 'web_search', max_uses: 2 };
 
 export function isInvalidToolError(err) {
   const msg = err && err.message ? String(err.message) : '';
@@ -77,7 +77,7 @@ export async function runGroundedJson({
   userMessage,
   instruction,
   maxTokens = 3000,
-  maxContinuations = 3,
+  maxContinuations = 1,
   searchMaxUses
 }) {
   const messages = [{

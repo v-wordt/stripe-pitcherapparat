@@ -2400,12 +2400,15 @@ const RESEARCH_CONCURRENCY = 3;
 const _sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
 function _isTransient(msg) {
-  return /\b(429|502|503|504|529)\b|rate.?limit|overloaded|timeout|fetch failed|network|ETIMEDOUT/i.test(String(msg || ''));
+  // Only true rate-limit / overload is worth one retry. A Vercel 60s kill
+  // (timeout/504/fetch failed) is terminal for that pass — retrying the same
+  // expensive call just re-times-out and double-charges credits.
+  return /\b(429|529)\b|rate.?limit|overloaded/i.test(String(msg || ''));
 }
 
-// Retry transient (rate-limit / overloaded / timeout) failures with
-// exponential backoff + jitter; fail fast on everything else.
-async function _withBackoff(fn, attempts = 4) {
+// Retry only genuine rate-limit/overload with one short backoff; fail fast
+// (no retry) on timeouts, aborts, and everything else.
+async function _withBackoff(fn, attempts = 2) {
   let delay = 1500;
   for (let i = 0; i < attempts; i++) {
     try {
@@ -2462,6 +2465,17 @@ async function startResearch() {
   let authFailed = false;
   let lastBackendError = null;
 
+  // Hard global wall-clock cap: a research run can never spin past this.
+  // On timeout we abort every in-flight call and render whatever we have.
+  const ABORT_CTRL = new AbortController();
+  const RESEARCH_BUDGET_MS = 120000;
+  let _researchAborted = false;
+  const _budgetTimer = setTimeout(() => {
+    _researchAborted = true;
+    ABORT_CTRL.abort();
+  }, RESEARCH_BUDGET_MS);
+  const _clearBudget = () => clearTimeout(_budgetTimer);
+
   async function readError(res) {
     try {
       const body = await res.json();
@@ -2477,9 +2491,10 @@ async function startResearch() {
     const seedRes = await fetch(`${BACKEND_URL}/research-seed`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ company })
+      body: JSON.stringify({ company }),
+      signal: ABORT_CTRL.signal
     });
-    if (seedRes.status === 401) { handleAuthError(); return; }
+    if (seedRes.status === 401) { _clearBudget(); handleAuthError(); return; }
     if (seedRes.ok) {
       const seed = await seedRes.json();
       seedWebsite = seed.website || null;
@@ -2498,112 +2513,97 @@ async function startResearch() {
   document.getElementById('loading-sub').textContent = 'Kategorien werden parallel recherchiert';
   progressEl.style.display = 'flex';
 
-  const MAX_ROUNDS = 5;
-
-  function chunk(arr, size) {
-    if (!isFinite(size) || size >= arr.length) return [arr];
-    const out = [];
-    for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
-    return out;
-  }
-
-  // Progressive degradation: a retry only helps if it is cheaper/faster than
-  // the call that just timed out (Vercel hard-kills at 60s).
-  function roundStrategy(round) {
-    if (round <= 1) return { batchSize: Infinity, modelHint: null, maxUses: 4 };
-    if (round === 2) return { batchSize: 'half', modelHint: 'light', maxUses: 3 };
-    if (round === 3) return { batchSize: 2, modelHint: 'light', maxUses: 2 };
-    if (round === 4) return { batchSize: 2, modelHint: 'light', maxUses: 2 };
-    return { batchSize: 1, modelHint: 'light', maxUses: 1 };
-  }
-
   function fieldAnswered(category, f) {
     const d = assembled[category] && assembled[category][f];
     return !!(d && typeof d.value === 'string' && d.value.trim());
   }
+  function filledCount(category) {
+    return (categoryFields[category] || []).filter(f => fieldAnswered(category, f)).length;
+  }
 
-  async function fetchCategory(category, fieldsSubset, strat) {
+  const remaining = {};
+  activeCategories.forEach(c => { remaining[c] = [...(categoryFields[c] || [])]; });
+
+  // Visible per-category status so a stuck/expensive run can never be silent.
+  const catStatus = {};
+  function renderStatus(phase) {
+    const parts = activeCategories.map(c => `${c}: ${catStatus[c] || '…'}`);
+    document.getElementById('loading-sub').textContent = `${phase} — ${parts.join('  ·  ')}`;
+  }
+
+  async function fetchCategory(category, fieldsSubset, opts) {
     const res = await fetch(`${BACKEND_URL}/research-category`, {
       method: 'POST',
       headers,
       body: JSON.stringify({
         company, website: seedWebsite, anchor: seedAnchor, category,
         fields: fieldsSubset,
-        modelHint: strat.modelHint || undefined,
-        searchMaxUses: strat.maxUses
-      })
+        modelHint: opts.modelHint || undefined,
+        searchMaxUses: opts.searchMaxUses
+      }),
+      signal: ABORT_CTRL.signal
     });
     if (res.status === 401) { authFailed = true; throw new Error('Unauthorized'); }
     if (!res.ok) throw new Error(await readError(res));
     return res.json();
   }
 
-  const remaining = {};
-  activeCategories.forEach(c => { remaining[c] = [...(categoryFields[c] || [])]; });
-
-  // All batch requests in a round go through one bounded pool so we never
-  // burst the API (the cause of late-round 429s that left chips red).
-  async function runRound(label, jobs) {
-    let sawTransient = false;
+  // One bounded pool per pass. Never bursts the API, never fans out per-field,
+  // never loops. At most two passes total for an entire research run.
+  async function runPass(label, jobs) {
     const cats = new Set(jobs.map(j => j.category));
     cats.forEach(c => {
       const chipEl = document.getElementById(`cat-chip-${catId(c)}`);
       if (chipEl) chipEl.className = 'cat-chip loading';
+      catStatus[c] = '…';
     });
-    const tasks = jobs.map(({ category, batch, strat }) => async () => {
+    renderStatus(label);
+    const tasks = jobs.map(({ category, batch, opts }) => async () => {
+      if (_researchAborted) return;
       try {
-        const data = await _withBackoff(() => fetchCategory(category, batch, strat));
+        const data = await _withBackoff(() => fetchCategory(category, batch, opts));
         Object.assign(assembled[category], data.result || {});
       } catch (err) {
+        if (err && err.name === 'AbortError') { catStatus[category] = 'abgebrochen'; return; }
         lastBackendError = err.message;
-        if (_isTransient(err.message)) sawTransient = true;
-        console.warn(`[research] ${label} ${category} batch failed:`, err.message);
+        catStatus[category] = `fehler: ${String(err.message).slice(0, 60)}`;
+        console.warn(`[research] ${label} ${category} failed:`, err.message);
       }
     });
     await _runPool(tasks, RESEARCH_CONCURRENCY);
     cats.forEach(category => {
-      remaining[category] = remaining[category].filter(f => !fieldAnswered(category, f));
+      const total = (categoryFields[category] || []).length;
+      remaining[category] = (categoryFields[category] || []).filter(f => !fieldAnswered(category, f));
+      const got = total - remaining[category].length;
       const chipEl = document.getElementById(`cat-chip-${catId(category)}`);
-      if (chipEl) chipEl.className = remaining[category].length === 0 ? 'cat-chip done' : 'cat-chip pending';
+      if (got === total && total > 0) { if (chipEl) chipEl.className = 'cat-chip done'; catStatus[category] = 'ok'; }
+      else if (got > 0)              { if (chipEl) chipEl.className = 'cat-chip pending'; catStatus[category] = `teilweise (${got}/${total})`; }
+      else if (!catStatus[category] || catStatus[category] === '…') { catStatus[category] = 'leer'; }
+      if (chipEl) chipEl.title = catStatus[category];
     });
-    return sawTransient;
+    renderStatus(label);
   }
 
-  for (let round = 1; round <= MAX_ROUNDS && !authFailed; round++) {
-    const pending = activeCategories.filter(c => remaining[c].length > 0);
-    if (pending.length === 0) break;
-    const strat = roundStrategy(round);
-    document.getElementById('loading-sub').textContent = round === 1
-      ? 'Kategorien werden recherchiert…'
-      : `Nachrecherche Runde ${round} – ${pending.length} Kategorie(n)`;
-
-    const jobs = [];
-    for (const category of pending) {
-      const size = strat.batchSize === 'half'
-        ? Math.max(1, Math.ceil(remaining[category].length / 2))
-        : strat.batchSize;
-      for (const batch of chunk(remaining[category], size)) jobs.push({ category, batch, strat });
-    }
-    const sawTransient = await runRound(`round ${round}`, jobs);
-
-    const stillPending = activeCategories.some(c => remaining[c].length > 0);
-    if (stillPending && round < MAX_ROUNDS && sawTransient && !authFailed) {
-      document.getElementById('loading-sub').textContent = 'Kurze Pause wegen API-Limit…';
-      await _sleep(4000);
-    }
+  // Pass 1: every active category once, full field list, its assigned model.
+  if (!authFailed && !_researchAborted) {
+    const jobs = activeCategories.map(category => ({
+      category, batch: [...(categoryFields[category] || [])],
+      opts: { modelHint: undefined, searchMaxUses: 2 }
+    }));
+    await runPass('Recherche', jobs);
   }
 
-  // Automatic settling pass: mimic the (working) manual retry — delayed,
-  // single field per call, low concurrency, with backoff.
-  if (!authFailed && activeCategories.some(c => remaining[c].length > 0)) {
-    document.getElementById('loading-sub').textContent = 'Abschliessende Nachrecherche…';
-    await _sleep(5000);
-    const strat = { batchSize: 1, modelHint: 'light', maxUses: 1 };
-    const jobs = [];
-    for (const category of activeCategories) {
-      for (const f of remaining[category]) jobs.push({ category, batch: [f], strat });
+  // Pass 2 (once): only categories that returned ZERO fields — genuine
+  // failures, not partials. Cheap light model, minimal search. No per-field.
+  if (!authFailed && !_researchAborted) {
+    const zero = activeCategories.filter(c => filledCount(c) === 0 && (categoryFields[c] || []).length > 0);
+    if (zero.length) {
+      const jobs = zero.map(category => ({
+        category, batch: [...(categoryFields[category] || [])],
+        opts: { modelHint: 'light', searchMaxUses: 1 }
+      }));
+      await runPass('Nachrecherche', jobs);
     }
-    if (jobs.length) await runRound('settling', jobs);
   }
 
   // Overlay verified identity anchors so the authoritative address/legal name wins.
@@ -2614,23 +2614,33 @@ async function startResearch() {
     }
   }
 
-  // Recompute remaining (the anchor overlay may have filled Grundinformationen
-  // fields whose category call failed) and expose context for manual retry.
+  // Run is over — kill the wall-clock timer and set the final tri-state chip
+  // (the anchor overlay may have filled Grundinformationen fields).
+  _clearBudget();
   activeCategories.forEach(c => {
+    const total = (categoryFields[c] || []).length;
     remaining[c] = (categoryFields[c] || []).filter(f => {
       const d = assembled[c] && assembled[c][f];
       return !(d && typeof d.value === 'string' && d.value.trim());
     });
+    const got = total - remaining[c].length;
     const chipEl = document.getElementById(`cat-chip-${catId(c)}`);
-    if (chipEl && remaining[c].length > 0) chipEl.className = 'cat-chip error';
+    if (chipEl) {
+      chipEl.className = (got === total && total > 0) ? 'cat-chip done'
+        : got > 0 ? 'cat-chip pending'
+        : 'cat-chip error';
+      chipEl.title = got === total ? 'ok' : got > 0 ? `teilweise (${got}/${total})` : (catStatus[c] || 'leer');
+    }
   });
   _researchCtx = { company, website: seedWebsite, anchor: seedAnchor, headers, categoryFields, remaining, assembled };
 
   progressEl.style.display = 'none';
   document.getElementById('loading-msg').textContent = 'Intelligence Layer is thinking…';
-  document.getElementById('loading-sub').textContent = 'Combining services across 3 CCs';
+  document.getElementById('loading-sub').textContent = _researchAborted
+    ? 'Zeitlimit erreicht – Teilergebnis wird angezeigt'
+    : 'Combining services across 3 CCs';
 
-  if (authFailed) { handleAuthError(); return; }
+  if (authFailed) { _clearBudget(); handleAuthError(); return; }
 
   const hasData = activeCategories.some(cat => Object.keys(assembled[cat] || {}).length > 0);
   if (!hasData) {

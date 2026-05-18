@@ -1,4 +1,4 @@
-import { runGroundedJson, MODEL_RESEARCH } from './_lib/research-core.js';
+import { runGroundedJson, MODEL_LIGHT } from './_lib/research-core.js';
 
 const SHARED_SECRET = process.env.SHARED_SECRET;
 
@@ -53,11 +53,12 @@ export default async function handler(req, res) {
 Identify the real legal entity, resolve its official primary website, and establish its authoritative identity anchors (official name, registered head-office address, legal form, founding year). Search the impressum / Handelsregister / Wikipedia specifically for the address and legal form.`;
 
     const parsed = await runGroundedJson({
-      model: MODEL_RESEARCH,
+      model: MODEL_LIGHT,
       system: ANCHOR_SYSTEM,
       userMessage,
       instruction: ANCHOR_INSTRUCTION,
-      maxTokens: 2048
+      maxTokens: 2048,
+      searchMaxUses: 2
     });
     console.log(`[research-seed] "${company}" took ${Date.now() - t0}ms`);
 
