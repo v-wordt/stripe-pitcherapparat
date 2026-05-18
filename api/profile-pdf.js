@@ -1,3 +1,5 @@
+import chromium from '@sparticuz/chromium';
+import puppeteer from 'puppeteer-core';
 import { put } from '@vercel/blob';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -29,71 +31,56 @@ function buildHTML(company, profile, contact, date) {
 
     const rows = Object.entries(fields).map(([fieldName, data]) => {
       const value = data?.value || '';
-      const isUnavailable = value === 'Nicht öffentlich verfügbar' || value === 'N/A' || !value;
-      const isAssumption = data?.assumption === true;
-      const confidence = data?.confidence || 'low';
+      const assumption = data?.assumption === true;
+      const assumptionNote = data?.assumptionNote || '';
+      const isEmpty = !value || value === 'Nicht öffentlich verfügbar' || value === 'N/A';
 
-      let valueHtml;
-      if (isUnavailable) {
-        valueHtml = `<span style="color:#aaa;font-style:italic;">${esc(value || 'Nicht öffentlich verfügbar')}</span>`;
-      } else {
-        valueHtml = esc(value);
-        if (isAssumption) {
-          valueHtml += ` <span style="display:inline-block;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#ff4b4b;border:1px solid #ff4b4b;border-radius:4px;padding:1px 5px;vertical-align:middle;margin-left:4px;">Schätzung</span>`;
-        }
-        if (confidence === 'low' && !isAssumption) {
-          valueHtml = `<span style="color:#888;">${valueHtml}</span>`;
-        }
-      }
+      const valueHtml = isEmpty
+        ? `<span style="color:#bbb;font-style:italic;">${esc(value || '—')}</span>`
+        : esc(value);
+      const noteHtml = assumption && assumptionNote
+        ? `<div style="font-size:12px;color:#888;font-style:italic;margin-top:3px;">Schätzung: ${esc(assumptionNote)}</div>`
+        : '';
 
-      return `
-        <tr>
-          <td style="padding:10px 16px;font-size:13px;color:#555;font-weight:500;width:42%;border-bottom:1px solid #f0eeee;vertical-align:top;">${esc(fieldName)}</td>
-          <td style="padding:10px 16px;font-size:13px;color:#100c2a;border-bottom:1px solid #f0eeee;vertical-align:top;line-height:1.55;">${valueHtml}</td>
-        </tr>`;
+      return `<tr>
+        <td style="width:38%;padding:7px 16px 7px 0;vertical-align:top;color:#193773;font-size:14px;font-weight:500;border-bottom:1px solid #f0eeee;">${esc(fieldName)}</td>
+        <td style="width:62%;padding:7px 0;vertical-align:top;color:#100c2a;font-size:14px;border-bottom:1px solid #f0eeee;">${valueHtml}${noteHtml}</td>
+      </tr>`;
     }).join('');
 
-    return `
-      <div style="margin-bottom:40px;break-inside:avoid;">
-        <div style="font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#ff4b4b;margin-bottom:12px;">${esc(cat)}</div>
-        <table style="width:100%;border-collapse:collapse;background:white;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.07);">
-          <tbody>${rows}</tbody>
-        </table>
-      </div>`;
+    return `<div style="margin-bottom:36px;break-inside:avoid;">
+      <div style="font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#ff4b4b;margin-bottom:6px;">${esc(cat)}</div>
+      <div style="height:1px;background:linear-gradient(90deg,#ff4b4b,#ff744f,transparent);margin-bottom:10px;opacity:.3;"></div>
+      <table style="width:100%;border-collapse:collapse;"><tbody>${rows}</tbody></table>
+    </div>`;
   }).join('');
 
-  const initials = contact.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  const initials = (contact.name || 'V').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
   return `<!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Prospect Profile · ${esc(company)}</title>
-<link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Maven Pro', sans-serif; background: #f5f3f0; color: #100c2a; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-.page { max-width: 860px; margin: 0 auto; padding: 48px 40px 80px; }
-@media print {
-  @page { margin: 18mm 16mm; size: A4; }
-  body { background: white; }
-  .page { padding: 0; max-width: 100%; }
-  .no-print { display: none !important; }
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Prospect Profile – ${esc(company)}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Maven+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Maven Pro',sans-serif;font-size:15px;color:#100c2a;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .page{max-width:860px;margin:0 auto;padding:48px 48px 64px;}
+    h1{font-size:38px;font-weight:400;line-height:1.15;background:linear-gradient(135deg,#ff4b4b,#ff744f);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px;}
+  </style>
 </head>
 <body>
 <div class="page">
 
-  <!-- Header -->
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:48px;padding-bottom:24px;border-bottom:2px solid #f0eeee;">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:40px;padding-bottom:24px;border-bottom:1px solid #f0eeee;">
     <div>
-      <div style="font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#ff4b4b;margin-bottom:8px;">Prospect Profile</div>
-      <h1 style="font-size:36px;font-weight:700;line-height:1.1;background:linear-gradient(135deg,#ff4b4b,#ff744f);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">${esc(company)}</h1>
-      <div style="font-size:13px;color:#888;margin-top:6px;">Erstellt am ${esc(date)} · valantic Stripe Pitcher</div>
+      <div style="font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#ff4b4b;margin-bottom:10px;">Prospect Profile</div>
+      <h1>${esc(company)}</h1>
+      <div style="font-size:14px;color:#193773;margin-top:4px;">${esc(date)} &nbsp;·&nbsp; valantic Stripe Pitcher</div>
     </div>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="232 216 1500 325" style="height:24px;width:auto;flex-shrink:0;margin-top:6px;">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="232 216 1500 325" style="height:26px;width:auto;flex-shrink:0;margin-top:4px;">
       <path fill="#100C2A" d="M1678,456.2c-7.8,14.8-24.3,23.9-43.6,23.9c-30,0-51.8-22.4-51.8-53.2s21.8-53.2,51.8-53.2c19.2,0,35.3,8.9,43.6,23.9l54-31.4c-19.3-33.1-56.2-53.6-96.8-53.6c-65.4,0-114.7,49.1-114.7,114.2S1569.8,541,1635.2,541c40.6,0,77.5-20.6,96.8-54L1678,456.2z"/>
       <rect fill="#100C2A" x="1439" y="318.8" width="62" height="216.2"/>
       <path fill="#100C2A" d="M1470,216.1c-20.4,0-37.6,17.2-37.6,37.6s17.2,37.6,37.6,37.6s37.6-17.2,37.6-37.6S1490.4,216.1,1470,216.1z"/>
@@ -106,22 +93,14 @@ body { font-family: 'Maven Pro', sans-serif; background: #f5f3f0; color: #100c2a
     </svg>
   </div>
 
-  <!-- Category blocks -->
   ${categoryBlocks}
 
-  <!-- Contact footer -->
-  <div style="margin-top:48px;padding-top:24px;border-top:1px solid #f0eeee;display:flex;align-items:center;gap:16px;">
-    <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#ff4b4b,#ff744f);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:white;flex-shrink:0;">${esc(initials)}</div>
+  <div style="margin-top:48px;padding-top:20px;border-top:2px solid;border-image:linear-gradient(90deg,#ff4b4b,#ff744f,transparent) 1;display:flex;align-items:center;gap:16px;">
+    <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#ff4b4b,#ff744f);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:14px;flex-shrink:0;">${esc(initials)}</div>
     <div>
-      <div style="font-size:14px;font-weight:700;color:#100c2a;">${esc(contact.name)}</div>
-      <div style="font-size:12px;color:#888;">${esc(contact.role)}</div>
-      <div style="font-size:12px;color:#ff4b4b;">${esc(contact.email)}</div>
+      <div style="font-weight:600;font-size:14px;color:#100c2a;">${esc(contact.name)}</div>
+      <div style="font-size:13px;color:#193773;">${esc(contact.role)}${contact.email ? ` &nbsp;·&nbsp; ${esc(contact.email)}` : ''}</div>
     </div>
-  </div>
-
-  <!-- Print button (hidden when printing) -->
-  <div class="no-print" style="margin-top:32px;text-align:center;">
-    <button onclick="window.print()" style="padding:12px 28px;background:linear-gradient(135deg,#ff4b4b,#ff744f);color:white;border:none;border-radius:10px;font-family:'Maven Pro',sans-serif;font-size:14px;font-weight:700;cursor:pointer;">Als PDF drucken</button>
   </div>
 
 </div>
@@ -152,11 +131,30 @@ export default async function handler(req, res) {
   const slug = `profile-${company.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}-${uuidv4().slice(0, 8)}`;
   const html = buildHTML(company, profile, contactInfo, date);
 
-  const blob = await put(`profiles/${slug}.html`, html, {
-    access: 'public',
-    contentType: 'text/html; charset=utf-8',
-    addRandomSuffix: false,
+  const browser = await puppeteer.launch({
+    args: chromium.args,
+    defaultViewport: chromium.defaultViewport,
+    executablePath: await chromium.executablePath(),
+    headless: chromium.headless,
   });
 
-  return res.status(200).json({ url: blob.url, slug });
+  try {
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      margin: { top: '16mm', right: '14mm', bottom: '16mm', left: '14mm' },
+      printBackground: true,
+    });
+
+    const blob = await put(`profiles/${slug}.pdf`, pdfBuffer, {
+      access: 'public',
+      contentType: 'application/pdf',
+      addRandomSuffix: false,
+    });
+
+    return res.status(200).json({ url: blob.url, slug });
+  } finally {
+    await browser.close();
+  }
 }
