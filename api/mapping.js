@@ -13,14 +13,28 @@ const INTELLIGENCE = {
   ]
 };
 
+function profileToProse(profile) {
+  const SKIP_VALUE = 'Nicht öffentlich verfügbar';
+  const lines = [];
+  for (const [category, fields] of Object.entries(profile)) {
+    if (!fields || typeof fields !== 'object') continue;
+    const fieldLines = [];
+    for (const [fieldName, fieldData] of Object.entries(fields)) {
+      const val = fieldData?.value;
+      if (val == null || val === SKIP_VALUE) continue;
+      fieldLines.push(`  ${fieldName}: ${val}`);
+    }
+    if (fieldLines.length === 0) continue;
+    lines.push(`${category}:`);
+    lines.push(...fieldLines);
+  }
+  return lines.join('\n');
+}
+
 function buildMappingPrompt(profile) {
-  // Extract key facts from profile for context
+  // Extract company name for header
   const grundinfo = profile['Grundinformationen'] || {};
   const company = grundinfo['Firmenname (Rufname)']?.value || 'Prospect';
-  const geschaeft = profile['Geschäftstätigkeit'] || {};
-  const kerngeschaeft = geschaeft['Kerngeschäft']?.value || 'unknown';
-  const produkte = profile['Produkte & Services'] || {};
-  const produktliste = produkte['Produkte/Services']?.value || 'unknown';
 
   // Top 3 valantic references for credibility
   const safeRefs = INTELLIGENCE.references.filter(r => r.nda !== 'full');
@@ -31,11 +45,9 @@ function buildMappingPrompt(profile) {
   return `You are a B2B sales strategist mapping prospect pains to Stripe + valantic solution blocks. Be extremely concise — every string value max 15 words.
 
 Prospect Profile: ${company}
-Core Business: ${kerngeschaeft}
-Products/Services: ${produktliste}
 
-Current Profile JSON (full):
-${JSON.stringify(profile, null, 2)}
+Prospect Profile Details:
+${profileToProse(profile)}
 
 valantic implementation track record:
 ${refsStr}
