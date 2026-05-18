@@ -13,6 +13,7 @@ const CATEGORIES = [
   'Finanzierung & Wachstum',
   'Markt & Wettbewerb',
   'Technologie & Infrastructure',
+  'Online-Touchpoints',
   'Signale',
 ];
 

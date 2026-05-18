@@ -1,0 +1,132 @@
+/*
+ * valantic Brand Fonts — Self-Hosted @font-face Declarations
+ *
+ * Usage: <link rel="stylesheet" href="assets/fonts/valantic-fonts.css">
+ *
+ * Font stack priority:
+ *   Headlines & UI  →  Maven Pro (valantic primary brand font)
+ *   Body copy       →  Segoe UI  (valantic secondary — excellent screen legibility)
+ *   System fallback →  system-ui, sans-serif
+ *
+ * Route-specific typography:
+ *   Route A (Guilloche)  →  Maven Pro Regular (weight 400) for headings
+ *   Route B (Shape)      →  Maven Pro Bold    (weight 700) for headings
+ *   Route C (Images)     →  Maven Pro Bold    (weight 700) for headings
+ *   Body text all routes →  Segoe UI Regular  (weight 400)
+ */
+
+/* ── Maven Pro ───────────────────────────────────────── */
+
+@font-face {
+  font-family: 'Maven Pro';
+  src: url('./MavenPro-Regular.woff2') format('woff2'),
+       url('./MavenPro-Regular.ttf')   format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Maven Pro';
+  src: url('./MavenPro-Medium.woff2') format('woff2'),
+       url('./MavenPro-Medium.ttf')   format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Maven Pro';
+  src: url('./MavenPro-SemiBold.woff2') format('woff2'),
+       url('./MavenPro-SemiBold.ttf')   format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Maven Pro';
+  src: url('./MavenPro-Bold.woff2') format('woff2'),
+       url('./MavenPro-Bold.ttf')   format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Variable font (covers all weights 400–700 in a single file) */
+@font-face {
+  font-family: 'Maven Pro Variable';
+  src: url('./MavenPro-VariableFont_wght.woff2') format('woff2 supports variations'),
+       url('./MavenPro-VariableFont_wght.woff2') format('woff2'),
+       url('./MavenPro-VariableFont_wght.ttf')   format('truetype');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ── Segoe UI ────────────────────────────────────────── */
+
+@font-face {
+  font-family: 'Segoe UI';
+  src: url('./segoeuisl.woff2') format('woff2'),
+       url('./segoeuisl.ttf')   format('truetype');
+  font-weight: 300; /* Semilight */
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Segoe UI';
+  src: url('./segoeuil.woff2') format('woff2'),
+       url('./segoeuil.ttf')   format('truetype');
+  font-weight: 350; /* Light */
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Segoe UI';
+  src: url('./segoeui.woff2') format('woff2'),
+       url('./segoeui.ttf')   format('truetype');
+  font-weight: 400; /* Regular */
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Segoe UI';
+  src: url('./seguisb.woff2') format('woff2'),
+       url('./seguisb.ttf')   format('truetype');
+  font-weight: 600; /* Semibold */
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Segoe UI';
+  src: url('./segoeuib.woff2') format('woff2'),
+       url('./segoeuib.ttf')   format('truetype');
+  font-weight: 700; /* Bold */
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ── Utility Classes ─────────────────────────────────── */
+
+/*
+  Apply these to the <body> or a wrapper to load the correct
+  font stack for each route:
+
+  Route A / Report / Dashboard (Segoe UI body, Maven Pro heads):
+    body { font-family: 'Segoe UI', system-ui, sans-serif; font-weight: 400; }
+    h1, h2, h3 { font-family: 'Maven Pro', sans-serif; font-weight: 400; }
+
+  Route B / Presentation / Landing (Maven Pro throughout):
+    body { font-family: 'Maven Pro', sans-serif; font-weight: 400; }
+    h1, h2, h3 { font-family: 'Maven Pro', sans-serif; font-weight: 700; }
+
+  Route C / Marketing / Campaign (Maven Pro Bold heads, Segoe UI body):
+    body { font-family: 'Segoe UI', system-ui, sans-serif; font-weight: 400; }
+    h1, h2 { font-family: 'Maven Pro', sans-serif; font-weight: 700; }
+    h3 { font-family: 'Maven Pro', sans-serif; font-weight: 600; }
+*/

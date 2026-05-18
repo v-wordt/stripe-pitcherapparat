@@ -14,6 +14,7 @@ const CATEGORY_MODEL = {
   'Geschäftstätigkeit': MODEL_LIGHT,
   'Produkte & Services': MODEL_LIGHT,
   'Technologie & Infrastructure': MODEL_LIGHT,
+  'Online-Touchpoints': MODEL_RESEARCH,
 };
 
 function buildSystemPrompt() {
