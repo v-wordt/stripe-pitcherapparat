@@ -1238,6 +1238,10 @@
           <i class="ph ph-sparkle" style="font-size:20px;"></i>
           Umfassender Pitch
         </button>
+        <button class="generate-btn-secondary" onclick="startBriefing()">
+          <i class="ph ph-file-text" style="font-size:20px;"></i>
+          Briefing
+        </button>
       </div>
     </div>
 
@@ -2325,6 +2329,59 @@ async function startQuickPitch() {
   } catch (err) {
     clearInterval(msgInterval);
     console.error('Quick pitch error:', err);
+    showInput();
+    alert('Error: ' + (err.message || JSON.stringify(err)));
+  }
+}
+
+// ── BRIEFING ──────────────────────────────────────────────────────────────
+async function startBriefing() {
+  const company = document.getElementById('contact-company').value.trim();
+  if (!company) { alert('Bitte gib den Unternehmensnamen ein.'); return; }
+
+  _lastInput = { company };
+  showLoading();
+  document.getElementById('loading-msg').textContent = 'Unternehmen wird recherchiert…';
+  document.getElementById('loading-sub').textContent = 'Internes Briefing wird erstellt';
+  document.getElementById('research-progress').style.display = 'none';
+
+  const loadingMsgs = [
+    'Unternehmen wird recherchiert…',
+    'Online-Touchpoints werden geprüft…',
+    'Stripe-Fit wird abgeleitet…',
+    'Briefing wird formuliert…'
+  ];
+  let msgIdx = 0;
+  const msgInterval = setInterval(() => {
+    msgIdx = (msgIdx + 1) % loadingMsgs.length;
+    document.getElementById('loading-msg').textContent = loadingMsgs[msgIdx];
+  }, 2500);
+
+  try {
+    const contact = loadProfile();
+    const res = await fetch(`${BACKEND_URL}/briefing`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-valantic-secret': sessionStorage.getItem('vauth_token') || ''
+      },
+      body: JSON.stringify({ company, contact })
+    });
+    clearInterval(msgInterval);
+    if (res.status === 401) { handleAuthError(); return; }
+    if (res.status === 422) {
+      const { error } = await res.json().catch(() => ({ error: 'Profil zu dünn.' }));
+      showInput();
+      alert(error || 'Profil zu dünn — Recherche unzureichend.');
+      return;
+    }
+    if (!res.ok) throw new Error(`Backend ${res.status}: ${await res.text()}`);
+    const { url } = await res.json();
+    window.open(url, '_blank');
+    showInput();
+  } catch (err) {
+    clearInterval(msgInterval);
+    console.error('Briefing error:', err);
     showInput();
     alert('Error: ' + (err.message || JSON.stringify(err)));
   }
